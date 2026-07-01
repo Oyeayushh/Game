@@ -9,6 +9,10 @@ Required secrets: BOT_TOKEN, API_ID, API_HASH
 
 import asyncio
 import os
+from dotenv import load_dotenv
+
+# ── Load .env FIRST so local/VPS runs work the same as Replit secrets ───────
+load_dotenv()
 
 # ── Credential check ────────────────────────────────────────────────────────
 _required = ["BOT_TOKEN", "API_ID", "API_HASH"]
@@ -16,7 +20,7 @@ _missing = [k for k in _required if not os.environ.get(k)]
 if _missing:
     raise RuntimeError(
         f"Missing environment secrets: {', '.join(_missing)}\n"
-        "Set them in Replit Secrets.\n"
+        "Set them in Replit Secrets or a .env file.\n"
         "  BOT_TOKEN → @BotFather on Telegram\n"
         "  API_ID    → https://my.telegram.org\n"
         "  API_HASH  → https://my.telegram.org"

@@ -18,6 +18,7 @@ import MadaraDefaultr as app
 from pyrogram import filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
+from utils.safe_send import safe_reply, safe_send
 from database import (
     get_or_create_user, get_balance, update_coins, record_win, record_loss
 )
@@ -237,6 +238,9 @@ async def _start_card_rounds(msg, chat_id: int):
     if chat_id not in card_games:
         return
     g = card_games[chat_id]
+    # Race-condition guard: only the first caller transitions to "playing"
+    if g["phase"] != "waiting":
+        return
     g["phase"] = "playing"
     n = len(g["players"])
     hands = _gen_hands_equal_sum(n)
@@ -328,7 +332,7 @@ async def _run_round(msg, chat_id: int):
         f"⏱ {CARD_TURN_TIMEOUT} seconds to choose…\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await msg.reply(txt, parse_mode=ParseMode.HTML)
+    await safe_reply(msg, txt)
 
     # Schedule auto-play timer as a cancellable Task
     async def _timer():
@@ -358,10 +362,10 @@ async def _auto_flip(msg, chat_id: int):
                 auto_played.append(p["name"])
 
     if auto_played:
-        await msg.reply(
+        await safe_send(
+            msg.chat.id,
             f"⏱ <b>Time's up!</b> Auto-played for: {', '.join(auto_played)}\n\n"
             f"<i>{POWERED_BY}</i>",
-            parse_mode=ParseMode.HTML
         )
     await _resolve_round(msg, chat_id)
 

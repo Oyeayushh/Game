@@ -17,6 +17,7 @@ import MadaraDefaultr as app
 from pyrogram import filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
+from utils.safe_send import safe_reply, safe_send
 from database import (
     get_or_create_user, get_balance, update_coins,
     record_win, record_loss, get_bomb_leaderboard, get_user_rank
@@ -243,10 +244,10 @@ def _schedule_bomb_timer(msg, chat_id: int):
             return
         g2 = bomb_games[chat_id]
         if not g2["passed"]:
-            await msg.reply(
+            await safe_send(
+                chat_id,
                 f"⏱ <b>{g2['players'].get(g2['bomb_holder'], 'Player')}</b> didn't pass in time!\n"
                 f"💥 Checking if bomb explodes…\n\n" + POWERED_BY,
-                parse_mode=ParseMode.HTML
             )
         await _maybe_explode(msg, chat_id)
 
@@ -268,30 +269,26 @@ async def _maybe_explode(msg, chat_id: int):
         victim_name = g["players"].get(victim, "Player")
         g["alive"].remove(victim)
         await record_loss(victim, "bomb_stats")
-        await msg.reply(
+        await safe_send(
+            chat_id,
             f"💥 <b>BOOM!</b> The bomb exploded on <b>{victim_name}</b>!\n\n"
             f"☠️ {victim_name} is eliminated!\n"
             f"👥 Remaining: {len(g['alive'])} players\n\n"
             f"<i>{POWERED_BY}</i>",
-            parse_mode=ParseMode.HTML
         )
         if len(g["alive"]) <= 1:
             await _end_bomb_game(msg, chat_id)
             return
         g["bomb_holder"] = random.choice(g["alive"])
-        try:
-            await app.send_message(
-                g["bomb_holder"],
-                f"💣 <b>The bomb passed to YOU!</b> Use /pass now!\n\n" + POWERED_BY,
-                parse_mode=ParseMode.HTML
-            )
-        except Exception:
-            pass
+        await safe_send(
+            g["bomb_holder"],
+            f"💣 <b>The bomb passed to YOU!</b> Use /pass now!\n\n" + POWERED_BY,
+        )
     else:
-        await msg.reply(
+        await safe_send(
+            chat_id,
             f"😅 The bomb didn't explode this round — keep passing!\n"
             f"💥 Use /pass now!\n\n" + POWERED_BY,
-            parse_mode=ParseMode.HTML
         )
     g["round"] += 1
     _schedule_bomb_timer(msg, chat_id)
