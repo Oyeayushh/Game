@@ -4,8 +4,8 @@ Powered by Madara
 """
 
 import MadaraDefaultr as app
-from kurigram import filters
-from kurigram.types import Message, CallbackQuery
+from pyrogram import filters
+from pyrogram.types import Message, CallbackQuery
 from database import get_or_create_user, get_balance, get_top_users, get_user_rank
 from utils.buttons import (
     start_keyboard, games_keyboard, keyboard,

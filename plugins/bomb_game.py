@@ -14,8 +14,8 @@ import asyncio
 import random
 
 import MadaraDefaultr as app
-from kurigram import filters
-from kurigram.types import Message, CallbackQuery
+from pyrogram import filters
+from pyrogram.types import Message, CallbackQuery
 from database import (
     get_or_create_user, get_balance, update_coins,
     record_win, record_loss, get_bomb_leaderboard, get_user_rank
@@ -97,8 +97,7 @@ async def start_bomb(_, msg: Message):
         if len(bomb_games[chat_id]["players"]) >= 2:
             await _begin_bomb_game(msg, chat_id)
         else:
-            # Refund and cancel
-            for pid, _ in bomb_games[chat_id]["players"].items():
+            for pid in list(bomb_games[chat_id]["players"]):
                 await update_coins(pid, bomb_games[chat_id]["entry_fee"])
             del bomb_games[chat_id]
             await msg.reply(
@@ -200,8 +199,8 @@ async def _begin_bomb_game(msg, chat_id: int):
     g["alive"] = list(g["players"].keys())
     g["bomb_holder"] = random.choice(g["alive"])
     g["round"] = 1
+    g["timer_task"] = None
 
-    holder_name = g["players"][g["bomb_holder"]]
     await msg.reply(
         f"<b>💣 Bomb Game Begins!</b>\n\n"
         f"👥 Players: {len(g['alive'])}\n"
@@ -212,7 +211,6 @@ async def _begin_bomb_game(msg, chat_id: int):
         f"<i>{POWERED_BY}</i>",
         parse_mode="html"
     )
-    # DM the bomb holder
     try:
         await app.send_message(
             g["bomb_holder"],
@@ -222,45 +220,52 @@ async def _begin_bomb_game(msg, chat_id: int):
     except Exception:
         pass
 
-    await _bomb_round_timer(msg, chat_id)
+    _schedule_bomb_timer(msg, chat_id)
 
 
-async def _bomb_round_timer(msg, chat_id: int):
-    """Wait for pass; if no pass in time, check explosion."""
-    if chat_id not in bomb_games:
+def _schedule_bomb_timer(msg, chat_id: int):
+    """Cancel any existing timer and start a fresh cancellable one."""
+    g = bomb_games.get(chat_id)
+    if not g:
         return
-    g = bomb_games[chat_id]
+    if g.get("timer_task") and not g["timer_task"].done():
+        g["timer_task"].cancel()
+    round_token = g["round"]
+
+    async def _timer():
+        await asyncio.sleep(BOMB_ROUND_TIMEOUT)
+        if chat_id not in bomb_games:
+            return
+        if bomb_games[chat_id].get("round") != round_token:
+            return
+        if bomb_games[chat_id]["phase"] != "playing":
+            return
+        g2 = bomb_games[chat_id]
+        if not g2["passed"]:
+            await msg.reply(
+                f"⏱ <b>{g2['players'].get(g2['bomb_holder'], 'Player')}</b> didn't pass in time!\n"
+                f"💥 Checking if bomb explodes…\n\n" + POWERED_BY,
+                parse_mode="html"
+            )
+        await _maybe_explode(msg, chat_id)
+
     g["passed"] = False
-    await asyncio.sleep(BOMB_ROUND_TIMEOUT)
-
-    if chat_id not in bomb_games or bomb_games[chat_id]["phase"] != "playing":
-        return
-
-    g = bomb_games[chat_id]
-    # Did holder pass?
-    if not g["passed"]:
-        await msg.reply(
-            f"⏱ <b>{g['players'][g['bomb_holder']]}</b> didn't pass in time!\n"
-            f"💥 Checking if bomb explodes…\n\n" + POWERED_BY,
-            parse_mode="html"
-        )
-    await _maybe_explode(msg, chat_id)
+    g["timer_task"] = asyncio.create_task(_timer())
 
 
 async def _maybe_explode(msg, chat_id: int):
+    if chat_id not in bomb_games:
+        return
     g = bomb_games[chat_id]
     if len(g["alive"]) <= 1:
         await _end_bomb_game(msg, chat_id)
         return
 
-    # Random explosion chance (guaranteed if only bomb holder refuses to pass)
     explode_chance = max(0.3, 1 / len(g["alive"]))
     if random.random() < explode_chance or not g["passed"]:
-        # Bomb explodes on current holder
         victim = g["bomb_holder"]
-        victim_name = g["players"][victim]
+        victim_name = g["players"].get(victim, "Player")
         g["alive"].remove(victim)
-        await update_coins(victim, 0)  # already deducted on join
         await record_loss(victim, "bomb_stats")
         await msg.reply(
             f"💥 <b>BOOM!</b> The bomb exploded on <b>{victim_name}</b>!\n\n"
@@ -269,10 +274,9 @@ async def _maybe_explode(msg, chat_id: int):
             f"<i>{POWERED_BY}</i>",
             parse_mode="html"
         )
-        if len(g["alive"]) == 1:
+        if len(g["alive"]) <= 1:
             await _end_bomb_game(msg, chat_id)
             return
-        # Pass bomb to random alive player
         g["bomb_holder"] = random.choice(g["alive"])
         try:
             await app.send_message(
@@ -289,8 +293,7 @@ async def _maybe_explode(msg, chat_id: int):
             parse_mode="html"
         )
     g["round"] += 1
-    g["passed"] = False
-    await _bomb_round_timer(msg, chat_id)
+    _schedule_bomb_timer(msg, chat_id)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -319,6 +322,10 @@ async def pass_bomb(_, msg: Message):
     g["bomb_holder"] = new_holder
     g["passed"] = True
 
+    # Cancel old timer — a new one will be scheduled after explosion check
+    if g.get("timer_task") and not g["timer_task"].done():
+        g["timer_task"].cancel()
+
     try:
         await app.send_message(
             new_holder,
@@ -334,7 +341,6 @@ async def pass_bomb(_, msg: Message):
         f"<i>{POWERED_BY}</i>",
         parse_mode="html"
     )
-    # Check explosion now
     await asyncio.sleep(2)
     await _maybe_explode(msg, chat_id)
 

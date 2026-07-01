@@ -1,0 +1,2 @@
+- [Kurigram module name](kurigram-setup.md) — Kurigram installs as `pyrogram` module; use `from pyrogram import ...` everywhere
+- [Bot client proxy pattern](bot-client-proxy.md) — Client must be created inside asyncio.run() context; proxy module MadaraDefaultr.py uses __getattr__

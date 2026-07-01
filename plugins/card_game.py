@@ -15,8 +15,8 @@ import random
 from collections import defaultdict
 
 import MadaraDefaultr as app
-from kurigram import filters
-from kurigram.types import Message, CallbackQuery
+from pyrogram import filters
+from pyrogram.types import Message, CallbackQuery
 from database import (
     get_or_create_user, get_balance, update_coins, record_win, record_loss
 )
@@ -290,22 +290,27 @@ async def _run_round(msg, chat_id: int):
         await _end_card_game(msg, chat_id)
         return
 
+    # Cancel any leftover timer from a previous round
+    if g.get("timer_task") and not g["timer_task"].done():
+        g["timer_task"].cancel()
+
+    # Unique token for this round – guards against stale timer callbacks
+    round_token = g["round"]
+
     labels = ["a", "b", "c", "d"]
-    # Notify each player privately (fall back to group DM hint)
-    player_mentions = []
     for uid, p in g["players"].items():
         used = g["used_cards"][uid]
         available = [c for c in labels if c not in used]
         hand = g["hands"][uid]
-        card_display = {l: hand[i] for i, l in enumerate(labels)}
+        card_display = {lbl: hand[i] for i, lbl in enumerate(labels)}
         try:
             await app.send_message(
                 uid,
                 f"<b>🃏 Round {g['round']}/4 — Your Cards</b>\n\n"
                 + "\n".join(
-                    f"{'✅' if l not in used else '❌'} Card {l.upper()}: "
-                    f"<b>{card_display[l]}</b>{'  ← used' if l in used else ''}"
-                    for l in labels
+                    f"{'✅' if lbl not in used else '❌'} Card {lbl.upper()}: "
+                    f"<b>{card_display[lbl]}</b>{'  ← used' if lbl in used else ''}"
+                    for lbl in labels
                 ) +
                 f"\n\n⚡ You have <b>{CARD_TURN_TIMEOUT}s</b> to /flip a card!\n"
                 f"Use: <code>/flip {available[0]}</code>\n\n<i>{POWERED_BY}</i>",
@@ -314,7 +319,6 @@ async def _run_round(msg, chat_id: int):
             )
         except Exception:
             pass
-        player_mentions.append(f"@{p['name']}" if p.get("username") else p["name"])
 
     txt = (
         f"<b>🃏 Round {g['round']}/4</b>\n\n"
@@ -325,11 +329,17 @@ async def _run_round(msg, chat_id: int):
     )
     await msg.reply(txt, parse_mode="html")
 
-    # Auto-play timer
-    await asyncio.sleep(CARD_TURN_TIMEOUT)
-    if chat_id not in card_games or card_games[chat_id]["round"] != g["round"]:
-        return
-    await _auto_flip(msg, chat_id)
+    # Schedule auto-play timer as a cancellable Task
+    async def _timer():
+        await asyncio.sleep(CARD_TURN_TIMEOUT)
+        # Guard: only fire if we're still on the same round
+        if chat_id not in card_games:
+            return
+        if card_games[chat_id].get("round") != round_token:
+            return
+        await _auto_flip(msg, chat_id)
+
+    g["timer_task"] = asyncio.create_task(_timer())
 
 
 async def _auto_flip(msg, chat_id: int):

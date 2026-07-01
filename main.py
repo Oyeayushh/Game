@@ -1,64 +1,74 @@
 """
-MadaraDefaultr – Main Bot Entry Point
+MadaraDefaultr – Entry Point
 Powered by Madara
 
-Usage:
-    python main.py
+Run:  python3 main.py
 
-Environment Variables Required:
-    API_ID     – from https://my.telegram.org
-    API_HASH   – from https://my.telegram.org
-    BOT_TOKEN  – from @BotFather on Telegram
+Required secrets: BOT_TOKEN, API_ID, API_HASH
 """
 
 import asyncio
 import os
-import importlib
 
-from kurigram import Client as MadaraDefaultr
-from kurigram import filters
-
-from config import API_ID, API_HASH, BOT_TOKEN, BOT_NAME, POWERED_BY
-from database import init_db
-
-# ── Sanity check credentials ────────────────────────────────────────────────
-if not API_ID or not API_HASH or not BOT_TOKEN:
+# ── Credential check ────────────────────────────────────────────────────────
+_required = ["BOT_TOKEN", "API_ID", "API_HASH"]
+_missing = [k for k in _required if not os.environ.get(k)]
+if _missing:
     raise RuntimeError(
-        "Missing credentials!\n"
-        "Please set API_ID, API_HASH, and BOT_TOKEN as environment secrets.\n"
-        "Get API_ID & API_HASH from https://my.telegram.org\n"
-        "Get BOT_TOKEN from @BotFather on Telegram."
+        f"Missing environment secrets: {', '.join(_missing)}\n"
+        "Set them in Replit Secrets.\n"
+        "  BOT_TOKEN → @BotFather on Telegram\n"
+        "  API_ID    → https://my.telegram.org\n"
+        "  API_HASH  → https://my.telegram.org"
     )
 
-# ── Create the bot client (exported as MadaraDefaultr) ──────────────────────
-MadaraDefaultr = MadaraDefaultr(
-    name="MadaraDefaultr",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-    plugins={"root": "plugins"},
-    sleep_threshold=60,
-    workdir="./sessions",
-)
+from pyrogram import Client, idle
+from database import init_db
+from config import API_ID, API_HASH, BOT_TOKEN, BOT_NAME, POWERED_BY
 
 
 async def main():
-    print(f"🚀 Initialising database...")
+    # ── Database ─────────────────────────────────────────────────────────────
+    print("🗄  Initialising database…")
     await init_db()
-    print(f"✅ Database ready.")
+    print("✅ Database ready.")
 
-    print(f"🤖 Starting {BOT_NAME}...")
-    async with MadaraDefaultr:
-        me = await MadaraDefaultr.get_me()
+    # ── Create the Pyrogram/Kurigram client INSIDE the event loop ────────────
+    client = Client(
+        name="MadaraDefaultr",
+        api_id=API_ID,
+        api_hash=API_HASH,
+        bot_token=BOT_TOKEN,
+        sleep_threshold=60,
+        workdir="./sessions",
+    )
+
+    # ── Inject into proxy module BEFORE importing plugins ────────────────────
+    import MadaraDefaultr as _proxy
+    _proxy._client = client
+
+    # ── Load all plugin handlers ──────────────────────────────────────────────
+    print("📦 Loading plugins…")
+    import plugins.start       # noqa: F401
+    import plugins.card_game   # noqa: F401
+    import plugins.bomb_game   # noqa: F401
+    import plugins.hack_game   # noqa: F401
+    print("✅ Plugins loaded.")
+
+    # ── Start the bot ─────────────────────────────────────────────────────────
+    print(f"🤖 Connecting {BOT_NAME}…")
+    os.makedirs("sessions", exist_ok=True)
+    async with client:
+        me = await client.get_me()
         print(
-            f"\n{'='*50}\n"
+            f"\n{'='*52}\n"
             f"  {BOT_NAME} is ONLINE!\n"
             f"  Username : @{me.username}\n"
             f"  Bot ID   : {me.id}\n"
             f"  {POWERED_BY}\n"
-            f"{'='*50}\n"
+            f"{'='*52}\n"
         )
-        await MadaraDefaultr.idle()
+        await idle()
 
 
 if __name__ == "__main__":

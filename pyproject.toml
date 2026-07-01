@@ -7,4 +7,5 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "kurigram>=2.2.23",
     "python-dotenv>=1.2.2",
+    "tgcrypto>=1.2.5",
 ]

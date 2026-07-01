@@ -15,8 +15,8 @@ import random
 from collections import Counter
 
 import MadaraDefaultr as app
-from kurigram import filters
-from kurigram.types import Message
+from pyrogram import filters
+from pyrogram.types import Message
 from database import (
     get_or_create_user, get_balance, update_coins, record_win, record_loss
 )
@@ -181,7 +181,13 @@ async def guess_hack(_, msg: Message):
         return
 
     uid = msg.from_user.id
-    if uid not in g["players"] and uid != g["host"]:
+    if uid == g["host"]:
+        await msg.reply(
+            "❌ You're the host — you can't guess your own password!\n\n" + POWERED_BY,
+            parse_mode="html"
+        )
+        return
+    if uid not in g["players"]:
         await msg.reply(
             f"❌ Register first with <code>/register &lt;amount&gt; coins</code>!\n\n" + POWERED_BY,
             parse_mode="html"
