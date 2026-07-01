@@ -16,6 +16,7 @@ from collections import Counter
 
 import MadaraDefaultr as app
 from pyrogram import filters
+from pyrogram.enums import ParseMode
 from pyrogram.types import Message
 from database import (
     get_or_create_user, get_balance, update_coins, record_win, record_loss
@@ -38,7 +39,7 @@ async def start_hack(_, msg: Message):
     if chat_id in hack_games:
         await msg.reply(
             "⚠️ A hack game is already running! /end it first.\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -47,7 +48,7 @@ async def start_hack(_, msg: Message):
         await msg.reply(
             "Usage: <code>/hack &lt;reward_amount&gt; &lt;digit_length 3-6&gt;</code>\n"
             "Example: <code>/hack 5000 4</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -58,7 +59,7 @@ async def start_hack(_, msg: Message):
     except (ValueError, AssertionError):
         await msg.reply(
             "❌ Invalid args. Reward must be > 0 and digit length between 3 and 6.\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -68,7 +69,7 @@ async def start_hack(_, msg: Message):
         await msg.reply(
             f"❌ You need <b>{reward:,}</b> coins to set the reward.\n"
             f"Balance: <code>{user['coins']:,}</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -97,7 +98,7 @@ async def start_hack(_, msg: Message):
         f"To guess: <code>/guess &lt;{length}-digit number&gt;</code>\n\n"
         f"<b>Good luck, Baka! 😈</b>\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard(
             [primary_btn(f"🔐 /register to join", data="hack_howto")],
         )
@@ -112,17 +113,17 @@ async def start_hack(_, msg: Message):
 async def register_hack(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id not in hack_games:
-        await msg.reply("❌ No hack game running. Start with /hack!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No hack game running. Start with /hack!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = hack_games[chat_id]
     uid = msg.from_user.id
 
     if uid == g["host"]:
-        await msg.reply("❌ You're the host — you can't register!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ You're the host — you can't register!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
     if uid in g["players"]:
-        await msg.reply("⚠️ Already registered!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("⚠️ Already registered!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     args = msg.command
@@ -130,7 +131,7 @@ async def register_hack(_, msg: Message):
         await msg.reply(
             "Usage: <code>/register &lt;amount&gt; coins</code>\n"
             "Example: <code>/register 1000 coins</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -138,14 +139,14 @@ async def register_hack(_, msg: Message):
         amount = int(args[1])
         assert amount > 0
     except (ValueError, AssertionError):
-        await msg.reply("❌ Invalid amount!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ Invalid amount!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     user = await get_or_create_user(uid, msg.from_user.username or "", msg.from_user.first_name or "")
     if user["coins"] < amount:
         await msg.reply(
             f"❌ Need <b>{amount:,}</b> coins. Balance: <code>{user['coins']:,}</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -160,7 +161,7 @@ async def register_hack(_, msg: Message):
         f"Good luck, Baka believes in you! 🧠✨\n\n"
         f"Start guessing: <code>/guess {g['length'] * '?'}</code>\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -172,25 +173,25 @@ async def register_hack(_, msg: Message):
 async def guess_hack(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id not in hack_games:
-        await msg.reply("❌ No hack game running!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No hack game running!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = hack_games[chat_id]
     if g["solved"]:
-        await msg.reply("🎉 Game already solved!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("🎉 Game already solved!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     uid = msg.from_user.id
     if uid == g["host"]:
         await msg.reply(
             "❌ You're the host — you can't guess your own password!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
     if uid not in g["players"]:
         await msg.reply(
             f"❌ Register first with <code>/register &lt;amount&gt; coins</code>!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -199,7 +200,7 @@ async def guess_hack(_, msg: Message):
         await msg.reply(
             f"Usage: <code>/guess &lt;{g['length']}-digit number&gt;</code>\n"
             f"Example: <code>/guess {'1234'[:g['length']]}</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -207,7 +208,7 @@ async def guess_hack(_, msg: Message):
     if not guess_str.isdigit() or len(guess_str) != g["length"]:
         await msg.reply(
             f"❌ Guess must be exactly <b>{g['length']} digits</b>!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -235,7 +236,7 @@ async def guess_hack(_, msg: Message):
             f"💰 Prize: <code>{pot:,}</code> coins\n\n"
             f"<b>BOOM! You hacked it! 🎊</b>\n\n"
             f"<i>{POWERED_BY}</i>",
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         del hack_games[chat_id]
         return
@@ -248,7 +249,7 @@ async def guess_hack(_, msg: Message):
         f"🟡 <b>GLITCHES: {glitches}</b> (wrong position)\n\n"
         f"{reaction}\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -279,12 +280,12 @@ def _guess_reaction(hacks: int, glitches: int, attempt: int) -> str:
 async def end_hack(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id not in hack_games:
-        await msg.reply("❌ No hack game running!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No hack game running!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = hack_games[chat_id]
     if msg.from_user.id != g["host"]:
-        await msg.reply("❌ Only the host can end the game!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ Only the host can end the game!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     password = g["password"]
@@ -305,7 +306,7 @@ async def end_hack(_, msg: Message):
         f"💸 Partial refund ({refund:,} coins) sent to {players_count} players\n\n"
         f"Thanks for playing! 😈\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 

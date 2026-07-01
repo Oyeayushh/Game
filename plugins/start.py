@@ -5,6 +5,7 @@ Powered by Madara
 
 import MadaraDefaultr as app
 from pyrogram import filters
+from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
 from database import get_or_create_user, get_top_users, get_user_rank
 from utils.buttons import (
@@ -41,7 +42,7 @@ async def start_private(_, msg: Message):
         f"💔 <b>Losses:</b> <code>{user['losses']}</code>\n\n"
         f"<i>{POWERED_BY} | {VERSION}</i>"
     )
-    await msg.reply(text, reply_markup=start_keyboard(), parse_mode="html")
+    await msg.reply(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 @app.on_message(filters.command("start") & filters.group)
@@ -61,7 +62,7 @@ async def start_group(_, msg: Message):
         f"Type /help for all commands.\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await msg.reply(text, reply_markup=start_keyboard(), parse_mode="html")
+    await msg.reply(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -100,7 +101,7 @@ async def help_cmd(_, msg: Message):
     bulb = premium_emoji(E_BULB, "💡")
     await msg.reply(
         f"{bulb} <b>{BOT_NAME} — Command Guide</b>\n{HELP_TEXT}\n<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard(
             [primary_btn("🎮 Games", data="games_menu", emoji_id=E_SWORD)],
             [btn("🔙 Back to Start", data="start", emoji_id=E_BACK)],
@@ -134,7 +135,7 @@ async def wallet_cmd(_, msg: Message):
         f"{diamond} <b>Global Rank:</b> #{rank}\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await msg.reply(text, parse_mode="html", reply_markup=keyboard(
+    await msg.reply(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
         [primary_btn("🏆 Leaderboard", data="leaderboard", emoji_id=E_TROPHY)],
         [btn("🔙 Back", data="start", emoji_id=E_BACK)],
     ))
@@ -158,7 +159,7 @@ async def top_cmd(_, msg: Message):
         + "\n".join(lines)
         + f"\n\n<i>{POWERED_BY}</i>"
     )
-    await msg.reply(text, parse_mode="html")
+    await msg.reply(text, parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -182,7 +183,7 @@ async def cb_start(_, cq: CallbackQuery):
         f"{coin} <b>Balance:</b> <code>{user['coins']:,}</code> coins\n\n"
         f"<i>{POWERED_BY} | {VERSION}</i>"
     )
-    await cq.edit_message_text(text, reply_markup=start_keyboard(), parse_mode="html")
+    await cq.edit_message_text(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 @app.on_callback_query(filters.regex("^games_menu$"))
@@ -194,7 +195,7 @@ async def cb_games(_, cq: CallbackQuery):
         f"💣 <b>Bomb Game</b> — pass the bomb, last alive wins\n"
         f"🔐 <b>Hack Game</b> — guess the secret password\n\n"
         f"<i>{POWERED_BY}</i>",
-        reply_markup=games_keyboard(), parse_mode="html"
+        reply_markup=games_keyboard(), parse_mode=ParseMode.HTML
     )
 
 
@@ -220,7 +221,7 @@ async def cb_wallet(_, cq: CallbackQuery):
         f"{diamond} Rank: #{rank}\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await cq.edit_message_text(text, parse_mode="html", reply_markup=keyboard(
+    await cq.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
         [primary_btn("🏆 Leaderboard", data="leaderboard", emoji_id=E_TROPHY)],
         [btn("🔙 Back", data="start", emoji_id=E_BACK)],
     ))
@@ -236,7 +237,7 @@ async def cb_leaderboard(_, cq: CallbackQuery):
         lines.append(f"{medals[i]} <b>{n}</b> — <code>{u['coins']:,}</code>")
     trophy = premium_emoji(E_TROPHY, "🏆")
     text   = f"{trophy} <b>Global Leaderboard</b>\n\n" + "\n".join(lines) + f"\n\n<i>{POWERED_BY}</i>"
-    await cq.edit_message_text(text, parse_mode="html", reply_markup=keyboard(
+    await cq.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
         [btn("🔙 Back", data="start", emoji_id=E_BACK)],
     ))
 
@@ -246,7 +247,7 @@ async def cb_help(_, cq: CallbackQuery):
     bulb = premium_emoji(E_BULB, "💡")
     await cq.edit_message_text(
         f"{bulb} <b>{BOT_NAME} — Command Guide</b>\n{HELP_TEXT}\n<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard([btn("🔙 Back", data="start", emoji_id=E_BACK)])
     )
 
@@ -266,7 +267,7 @@ async def cb_info_card(_, cq: CallbackQuery):
         "<b>Commands:</b>\n"
         "/card — Start | /bet &lt;amount&gt; — Join | /flip a/b/c/d — Play\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard([btn("🔙 Back", data="games_menu", emoji_id=E_BACK)])
     )
 
@@ -285,7 +286,7 @@ async def cb_info_bomb(_, cq: CallbackQuery):
         "/bomb &lt;amount&gt; — Start | /join &lt;amount&gt; — Join\n"
         "/pass — Pass | /rank — Rank | /leaders — Leaderboard\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard([btn("🔙 Back", data="games_menu", emoji_id=E_BACK)])
     )
 
@@ -306,6 +307,6 @@ async def cb_info_hack(_, cq: CallbackQuery):
         "/hack &lt;amount&gt; &lt;digits&gt; — Host | /register &lt;amount&gt; — Join\n"
         "/guess &lt;pass&gt; — Guess | /end — End\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html",
+        parse_mode=ParseMode.HTML,
         reply_markup=keyboard([btn("🔙 Back", data="games_menu", emoji_id=E_BACK)])
     )

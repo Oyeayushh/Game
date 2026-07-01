@@ -15,6 +15,7 @@ import random
 
 import MadaraDefaultr as app
 from pyrogram import filters
+from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
 from database import (
     get_or_create_user, get_balance, update_coins,
@@ -36,7 +37,7 @@ async def start_bomb(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id in bomb_games:
         await msg.reply(
-            "⚠️ A bomb game is already running!\n\n" + POWERED_BY, parse_mode="html"
+            "⚠️ A bomb game is already running!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML
         )
         return
 
@@ -44,7 +45,7 @@ async def start_bomb(_, msg: Message):
     if len(args) < 2:
         await msg.reply(
             "Usage: <code>/bomb &lt;entry_amount&gt;</code>\nExample: /bomb 500\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -52,7 +53,7 @@ async def start_bomb(_, msg: Message):
         amount = int(args[1])
         assert amount > 0
     except (ValueError, AssertionError):
-        await msg.reply("❌ Invalid amount!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ Invalid amount!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     uid = msg.from_user.id
@@ -60,7 +61,7 @@ async def start_bomb(_, msg: Message):
     if user["coins"] < amount:
         await msg.reply(
             f"❌ Need <b>{amount:,}</b> coins. Balance: <code>{user['coins']:,}</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -89,7 +90,7 @@ async def start_bomb(_, msg: Message):
         f"Use <b>/join {amount}</b> or tap below to join!\n"
         f"Game starts in <b>30 seconds</b> or when host is ready.\n\n"
         f"<i>{POWERED_BY}</i>",
-        reply_markup=kb, parse_mode="html"
+        reply_markup=kb, parse_mode=ParseMode.HTML
     )
     # Auto-start after 30s
     await asyncio.sleep(30)
@@ -102,7 +103,7 @@ async def start_bomb(_, msg: Message):
             del bomb_games[chat_id]
             await msg.reply(
                 "❌ Not enough players. Bomb game cancelled & fees refunded.\n\n" + POWERED_BY,
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
 
 
@@ -114,13 +115,13 @@ async def start_bomb(_, msg: Message):
 async def join_bomb(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id not in bomb_games or bomb_games[chat_id]["phase"] != "waiting":
-        await msg.reply("❌ No bomb game waiting. Start one with /bomb!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No bomb game waiting. Start one with /bomb!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = bomb_games[chat_id]
     uid = msg.from_user.id
     if uid in g["players"]:
-        await msg.reply("⚠️ Already joined!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("⚠️ Already joined!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     fee = g["entry_fee"]
@@ -128,7 +129,7 @@ async def join_bomb(_, msg: Message):
     if user["coins"] < fee:
         await msg.reply(
             f"❌ Need <b>{fee:,}</b> coins. Balance: <code>{user['coins']:,}</code>\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -141,7 +142,7 @@ async def join_bomb(_, msg: Message):
         f"👥 Players: {len(g['players'])}\n"
         f"🏆 Pot: <code>{g['pot']:,}</code> coins\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -169,7 +170,7 @@ async def cb_bomb_join(_, cq: CallbackQuery):
     await cq.answer("✅ Joined!")
     await cq.message.reply(
         f"✅ <b>{cq.from_user.first_name}</b> joined! Players: {len(g['players'])}\n\n" + POWERED_BY,
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -186,7 +187,7 @@ async def cb_bomb_cancel_btn(_, cq: CallbackQuery):
     for pid in g["players"]:
         await update_coins(pid, g["entry_fee"])
     del bomb_games[chat_id]
-    await cq.edit_message_text("❌ Bomb game cancelled. Fees refunded.\n\n" + POWERED_BY, parse_mode="html")
+    await cq.edit_message_text("❌ Bomb game cancelled. Fees refunded.\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -209,13 +210,13 @@ async def _begin_bomb_game(msg, chat_id: int):
         f"Only the holder knows — check your DM!\n\n"
         f"Use /pass to pass the bomb!\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
     try:
         await app.send_message(
             g["bomb_holder"],
             f"💣 <b>YOU HAVE THE BOMB!</b>\n\nUse /pass in the group to pass it!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
     except Exception:
         pass
@@ -245,7 +246,7 @@ def _schedule_bomb_timer(msg, chat_id: int):
             await msg.reply(
                 f"⏱ <b>{g2['players'].get(g2['bomb_holder'], 'Player')}</b> didn't pass in time!\n"
                 f"💥 Checking if bomb explodes…\n\n" + POWERED_BY,
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
         await _maybe_explode(msg, chat_id)
 
@@ -272,7 +273,7 @@ async def _maybe_explode(msg, chat_id: int):
             f"☠️ {victim_name} is eliminated!\n"
             f"👥 Remaining: {len(g['alive'])} players\n\n"
             f"<i>{POWERED_BY}</i>",
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         if len(g["alive"]) <= 1:
             await _end_bomb_game(msg, chat_id)
@@ -282,7 +283,7 @@ async def _maybe_explode(msg, chat_id: int):
             await app.send_message(
                 g["bomb_holder"],
                 f"💣 <b>The bomb passed to YOU!</b> Use /pass now!\n\n" + POWERED_BY,
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
         except Exception:
             pass
@@ -290,7 +291,7 @@ async def _maybe_explode(msg, chat_id: int):
         await msg.reply(
             f"😅 The bomb didn't explode this round — keep passing!\n"
             f"💥 Use /pass now!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
     g["round"] += 1
     _schedule_bomb_timer(msg, chat_id)
@@ -304,18 +305,18 @@ async def _maybe_explode(msg, chat_id: int):
 async def pass_bomb(_, msg: Message):
     chat_id = msg.chat.id
     if chat_id not in bomb_games or bomb_games[chat_id]["phase"] != "playing":
-        await msg.reply("❌ No bomb game running!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No bomb game running!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = bomb_games[chat_id]
     uid = msg.from_user.id
     if uid != g["bomb_holder"]:
-        await msg.reply("❌ You don't have the bomb!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ You don't have the bomb!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     others = [p for p in g["alive"] if p != uid]
     if not others:
-        await msg.reply("❌ No one else to pass to!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No one else to pass to!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     new_holder = random.choice(others)
@@ -330,7 +331,7 @@ async def pass_bomb(_, msg: Message):
         await app.send_message(
             new_holder,
             f"💣 <b>YOU NOW HAVE THE BOMB!</b> Use /pass quickly!\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
     except Exception:
         pass
@@ -339,7 +340,7 @@ async def pass_bomb(_, msg: Message):
         f"✅ <b>{msg.from_user.first_name}</b> passed the bomb!\n"
         f"💣 Bomb is now with... someone 👀\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
     await asyncio.sleep(2)
     await _maybe_explode(msg, chat_id)
@@ -356,7 +357,7 @@ async def _end_bomb_game(msg, chat_id: int):
         f"🏆 Winner: <b>{g['players'][winner]}</b>\n"
         f"💰 Prize: <code>{pot:,}</code> coins\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
     del bomb_games[chat_id]
 
@@ -373,11 +374,11 @@ async def bomb_cancel(_, msg: Message):
     is_admin = member.status in ("administrator", "creator")
 
     if chat_id not in bomb_games:
-        await msg.reply("❌ No bomb game running!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ No bomb game running!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     if not is_admin and uid != bomb_games[chat_id]["host"]:
-        await msg.reply("❌ Only admins or the host can cancel!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("❌ Only admins or the host can cancel!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     g = bomb_games[chat_id]
@@ -388,7 +389,7 @@ async def bomb_cancel(_, msg: Message):
         f"<b>❌ Bomb game cancelled by admin.</b>\n"
         f"💸 Entry fees refunded to all players.\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -408,7 +409,7 @@ async def bomb_rank(_, msg: Message):
         f"💔 Losses: <code>{user['losses']}</code>\n"
         f"📊 Global Rank: <b>#{rank}</b>\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -416,7 +417,7 @@ async def bomb_rank(_, msg: Message):
 async def bomb_leaders(_, msg: Message):
     lb = await get_bomb_leaderboard(10)
     if not lb:
-        await msg.reply("No bomb stats yet. Play /bomb to get started!\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("No bomb stats yet. Play /bomb to get started!\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
     medals = ["🥇", "🥈", "🥉"] + ["🔸"] * 7
     lines = []
@@ -425,5 +426,5 @@ async def bomb_leaders(_, msg: Message):
         lines.append(f"{medals[i]} <b>{n}</b> — {u['wins']}W / {u['losses']}L — <code>{u['coins_won']:,}</code> coins")
     await msg.reply(
         "<b>💣 Bomb Game Leaderboard</b>\n\n" + "\n".join(lines) + f"\n\n<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )

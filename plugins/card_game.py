@@ -16,6 +16,7 @@ from collections import defaultdict
 
 import MadaraDefaultr as app
 from pyrogram import filters
+from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
 from database import (
     get_or_create_user, get_balance, update_coins, record_win, record_loss
@@ -73,7 +74,7 @@ async def start_card_game(_, msg: Message):
             await msg.reply(
                 "⚠️ A card game is already waiting for players.\n"
                 f"Use <b>/bet &lt;amount&gt;</b> to join!\n\n<i>{POWERED_BY}</i>",
-                parse_mode="html"
+                parse_mode=ParseMode.HTML
             )
             return
 
@@ -85,7 +86,7 @@ async def start_card_game(_, msg: Message):
         await msg.reply(
             f"❌ You need at least <b>{entry_fee:,}</b> coins to start.\n"
             f"Your balance: <code>{user['coins']:,}</code>\n\n<i>{POWERED_BY}</i>",
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -118,7 +119,7 @@ async def start_card_game(_, msg: Message):
         [success_btn(f"✅ Join (pay {entry_fee} coins)", data=f"card_join_{chat_id}")],
         [danger_btn("❌ Cancel", data=f"card_cancel_{chat_id}")],
     )
-    await msg.reply(txt, reply_markup=kb, parse_mode="html")
+    await msg.reply(txt, reply_markup=kb, parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -131,7 +132,7 @@ async def bet_card_game(_, msg: Message):
     if chat_id not in card_games or card_games[chat_id]["phase"] != "waiting":
         await msg.reply(
             "❌ No card game is waiting right now. Use /card to start one!\n\n"
-            f"<i>{POWERED_BY}</i>", parse_mode="html"
+            f"<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML
         )
         return
 
@@ -139,7 +140,7 @@ async def bet_card_game(_, msg: Message):
     uid = msg.from_user.id
 
     if uid in g["players"]:
-        await msg.reply("⚠️ You already joined this game!", parse_mode="html")
+        await msg.reply("⚠️ You already joined this game!", parse_mode=ParseMode.HTML)
         return
 
     fee = g["entry_fee"]
@@ -147,7 +148,7 @@ async def bet_card_game(_, msg: Message):
     if user["coins"] < fee:
         await msg.reply(
             f"❌ You need <b>{fee:,}</b> coins to join. Balance: <code>{user['coins']:,}</code>\n\n"
-            f"<i>{POWERED_BY}</i>", parse_mode="html"
+            f"<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML
         )
         return
 
@@ -164,12 +165,12 @@ async def bet_card_game(_, msg: Message):
 
     if len(g["players"]) >= 2:
         txt += "🚀 <b>Game starting in 10 seconds…</b>\n"
-        await msg.reply(txt + f"<i>{POWERED_BY}</i>", parse_mode="html")
+        await msg.reply(txt + f"<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML)
         await asyncio.sleep(10)
         await _start_card_rounds(msg, chat_id)
     else:
         txt += f"⏳ Waiting for more players. Use /bet {fee} to join!\n\n<i>{POWERED_BY}</i>"
-        await msg.reply(txt, parse_mode="html")
+        await msg.reply(txt, parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -203,7 +204,7 @@ async def cb_card_join(_, cq: CallbackQuery):
     if len(g["players"]) >= 2:
         await cq.message.reply(
             f"<b>🚀 Enough players! Starting card game in 10 seconds…</b>\n\n<i>{POWERED_BY}</i>",
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         await asyncio.sleep(10)
         await _start_card_rounds(cq.message, chat_id)
@@ -224,7 +225,7 @@ async def cb_card_cancel(_, cq: CallbackQuery):
     del card_games[chat_id]
     await cq.edit_message_text(
         f"<b>❌ Card game cancelled. Entry fees refunded.</b>\n\n<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -252,7 +253,7 @@ async def _start_card_rounds(msg, chat_id: int):
         f"Each player has cards <b>A, B, C, D</b> (hidden values).\n"
         f"Cards sum is equal for all players — only strategy wins!\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
     await asyncio.sleep(2)
     await _run_round(msg, chat_id)
@@ -314,7 +315,7 @@ async def _run_round(msg, chat_id: int):
                 ) +
                 f"\n\n⚡ You have <b>{CARD_TURN_TIMEOUT}s</b> to /flip a card!\n"
                 f"Use: <code>/flip {available[0]}</code>\n\n<i>{POWERED_BY}</i>",
-                parse_mode="html",
+                parse_mode=ParseMode.HTML,
                 reply_markup=flip_keyboard(available)
             )
         except Exception:
@@ -327,7 +328,7 @@ async def _run_round(msg, chat_id: int):
         f"⏱ {CARD_TURN_TIMEOUT} seconds to choose…\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await msg.reply(txt, parse_mode="html")
+    await msg.reply(txt, parse_mode=ParseMode.HTML)
 
     # Schedule auto-play timer as a cancellable Task
     async def _timer():
@@ -360,7 +361,7 @@ async def _auto_flip(msg, chat_id: int):
         await msg.reply(
             f"⏱ <b>Time's up!</b> Auto-played for: {', '.join(auto_played)}\n\n"
             f"<i>{POWERED_BY}</i>",
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
     await _resolve_round(msg, chat_id)
 
@@ -380,15 +381,15 @@ async def flip_card(_, msg: Message):
 
     g = card_games[chat_id]
     if uid not in g["players"]:
-        await msg.reply("❌ You're not in this game!", parse_mode="html")
+        await msg.reply("❌ You're not in this game!", parse_mode=ParseMode.HTML)
         return
     if uid in g["round_choices"]:
-        await msg.reply("⚠️ You already flipped a card this round!", parse_mode="html")
+        await msg.reply("⚠️ You already flipped a card this round!", parse_mode=ParseMode.HTML)
         return
 
     args = msg.command
     if len(args) < 2 or args[1].lower() not in ["a", "b", "c", "d"]:
-        await msg.reply("Usage: <code>/flip a</code> or b/c/d\n\n" + POWERED_BY, parse_mode="html")
+        await msg.reply("Usage: <code>/flip a</code> or b/c/d\n\n" + POWERED_BY, parse_mode=ParseMode.HTML)
         return
 
     choice = args[1].lower()
@@ -399,7 +400,7 @@ async def flip_card(_, msg: Message):
         await msg.reply(
             f"❌ Card <b>{choice.upper()}</b> is already used!\n"
             f"Available: {', '.join(c.upper() for c in available)}\n\n" + POWERED_BY,
-            parse_mode="html"
+            parse_mode=ParseMode.HTML
         )
         return
 
@@ -408,7 +409,7 @@ async def flip_card(_, msg: Message):
     await msg.reply(
         f"✅ <b>{msg.from_user.first_name}</b> flipped Card <b>{choice.upper()}</b>!\n\n"
         f"<i>{POWERED_BY}</i>",
-        parse_mode="html"
+        parse_mode=ParseMode.HTML
     )
 
     if len(g["round_choices"]) == len(g["players"]):
@@ -447,7 +448,7 @@ async def _resolve_round(msg, chat_id: int):
                     for uid in g["players"])
         + f"\n\n<i>{POWERED_BY}</i>"
     )
-    await msg.reply(txt, parse_mode="html")
+    await msg.reply(txt, parse_mode=ParseMode.HTML)
 
     await asyncio.sleep(3)
     await _run_round(msg, chat_id)
@@ -481,5 +482,5 @@ async def _end_card_game(msg, chat_id: int):
         f"💰 Prize: <code>{per_winner:,}</code> coins each\n\n"
         f"<i>{POWERED_BY}</i>"
     )
-    await msg.reply(txt, parse_mode="html")
+    await msg.reply(txt, parse_mode=ParseMode.HTML)
     del card_games[chat_id]
