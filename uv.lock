@@ -1,0 +1,66 @@
+version = 1
+revision = 3
+requires-python = ">=3.11"
+
+[[package]]
+name = "aiosqlite"
+version = "0.22.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/8a/64761f4005f17809769d23e518d915db74e6310474e733e3593cfc854ef1/aiosqlite-0.22.1.tar.gz", hash = "sha256:043e0bd78d32888c0a9ca90fc788b38796843360c855a7262a532813133a0650", size = 14821, upload-time = "2025-12-23T19:25:43.997Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/b7/e3bf5133d697a08128598c8d0abc5e16377b51465a33756de24fa7dee953/aiosqlite-0.22.1-py3-none-any.whl", hash = "sha256:21c002eb13823fad740196c5a2e9d8e62f6243bd9e7e4a1f87fb5e44ecb4fceb", size = 17405, upload-time = "2025-12-23T19:25:42.139Z" },
+]
+
+[[package]]
+name = "kurigram"
+version = "2.2.23"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyaes" },
+    { name = "python-socks" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a1/f3/e93fe48fa937cb681c4a8581f4d75da9e9054e35efedaecc9490fb585b45/kurigram-2.2.23.tar.gz", hash = "sha256:b8ccc23cab2875b25134a01f7c632dd64de334804b60c8cf19f20eb3b2ec5c58", size = 589349, upload-time = "2026-05-21T15:12:37.533Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/1b/00ca5e8a39dbf7083e8ad37bf0e3062f3126f78ee3f94cda78d77e5883ff/kurigram-2.2.23-py3-none-any.whl", hash = "sha256:3a5806c76acd0f8fdd9cd1e2f65f84c61f8b2650689c7481c5035a8ad26022d9", size = 5690474, upload-time = "2026-05-21T15:12:35.319Z" },
+]
+
+[[package]]
+name = "pyaes"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/66/2c17bae31c906613795711fc78045c285048168919ace2220daa372c7d72/pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f", size = 28536, upload-time = "2017-09-20T21:17:54.23Z" }
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
+]
+
+[[package]]
+name = "python-socks"
+version = "2.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/0b/cd77011c1bc01b76404f7aba07fca18aca02a19c7626e329b40201217624/python_socks-2.8.1.tar.gz", hash = "sha256:698daa9616d46dddaffe65b87db222f2902177a2d2b2c0b9a9361df607ab3687", size = 38909, upload-time = "2026-02-16T05:24:00.745Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/fe/9a58cb6eec633ff6afae150ca53c16f8cc8b65862ccb3d088051efdfceb7/python_socks-2.8.1-py3-none-any.whl", hash = "sha256:28232739c4988064e725cdbcd15be194743dd23f1c910f784163365b9d7be035", size = 55087, upload-time = "2026-02-16T05:23:59.147Z" },
+]
+
+[[package]]
+name = "repl-nix-workspace"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "kurigram" },
+    { name = "python-dotenv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiosqlite", specifier = ">=0.22.1" },
+    { name = "kurigram", specifier = ">=2.2.23" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+]

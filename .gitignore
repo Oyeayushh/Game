@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.env
+
+# Virtual env
+.venv/
+venv/
+.pythonlibs/
+
+# Bot sessions
+sessions/
+*.session
+*.session-journal
+
+# Database
+*.db
+*.db-journal
+
+# Replit
+.replit
+replit.nix
+.cache/
+.upm/
