@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────
+#  MadaraDefaultr – systemd service (VPS / Linux server)
+#
+#  1. Copy this file:
+#       sudo cp deploy/madara-bot.service /etc/systemd/system/
+#  2. Edit WorkingDirectory and EnvironmentFile paths below
+#  3. Enable and start:
+#       sudo systemctl daemon-reload
+#       sudo systemctl enable madara-bot
+#       sudo systemctl start madara-bot
+#  4. Check logs:
+#       sudo journalctl -u madara-bot -f
+# ─────────────────────────────────────────────────────────────
+
+[Unit]
+Description=MadaraDefaultr Telegram Game Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/aura_x_holder
+EnvironmentFile=/home/ubuntu/aura_x_holder/.env
+ExecStart=/usr/bin/python3 main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
