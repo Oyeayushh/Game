@@ -3,7 +3,6 @@ MadaraDefaultr – Entry Point
 Powered by Madara
 
 Run:  python3 main.py
-
 Required secrets: BOT_TOKEN, API_ID, API_HASH
 """
 
@@ -11,19 +10,14 @@ import asyncio
 import os
 from dotenv import load_dotenv
 
-# ── Load .env FIRST so local/VPS runs work the same as Replit secrets ───────
 load_dotenv()
 
-# ── Credential check ────────────────────────────────────────────────────────
 _required = ["BOT_TOKEN", "API_ID", "API_HASH"]
-_missing = [k for k in _required if not os.environ.get(k)]
+_missing  = [k for k in _required if not os.environ.get(k)]
 if _missing:
     raise RuntimeError(
-        f"Missing environment secrets: {', '.join(_missing)}\n"
-        "Set them in Replit Secrets or a .env file.\n"
-        "  BOT_TOKEN → @BotFather on Telegram\n"
-        "  API_ID    → https://my.telegram.org\n"
-        "  API_HASH  → https://my.telegram.org"
+        f"ᴍɪssɪɴɢ ᴇɴᴠɪʀᴏɴᴍᴇɴᴛ sᴇᴄʀᴇᴛs: {', '.join(_missing)}\n"
+        "sᴇᴛ ᴛʜᴇᴍ ɪɴ ʀᴇᴘʟɪᴛ sᴇᴄʀᴇᴛs ᴏʀ .ᴇɴᴠ ғɪʟᴇ."
     )
 
 from pyrogram import Client, idle
@@ -32,12 +26,10 @@ from config import API_ID, API_HASH, BOT_TOKEN, BOT_NAME, POWERED_BY
 
 
 async def main():
-    # ── Database ─────────────────────────────────────────────────────────────
-    print("🗄  Initialising database…")
+    print("🗄  ɪɴɪᴛɪᴀʟɪsɪɴɢ ᴅᴀᴛᴀʙᴀsᴇ…")
     await init_db()
-    print("✅ Database ready.")
+    print("✅ ᴅᴀᴛᴀʙᴀsᴇ ʀᴇᴀᴅʏ.")
 
-    # ── Create the Pyrogram/Kurigram client INSIDE the event loop ────────────
     client = Client(
         name="MadaraDefaultr",
         api_id=API_ID,
@@ -47,28 +39,31 @@ async def main():
         workdir="./sessions",
     )
 
-    # ── Inject into proxy module BEFORE importing plugins ────────────────────
     import MadaraDefaultr as _proxy
     _proxy._client = client
 
-    # ── Load all plugin handlers ──────────────────────────────────────────────
-    print("📦 Loading plugins…")
-    import plugins.start       # noqa: F401
-    import plugins.card_game   # noqa: F401
-    import plugins.bomb_game   # noqa: F401
-    import plugins.hack_game   # noqa: F401
-    print("✅ Plugins loaded.")
+    print("📦 ʟᴏᴀᴅɪɴɢ ᴘʟᴜɢɪɴs…")
+    import plugins.start        # noqa: F401
+    import plugins.card_game    # noqa: F401
+    import plugins.bomb_game    # noqa: F401
+    import plugins.hack_game    # noqa: F401
+    import plugins.social       # noqa: F401
+    import plugins.rpg          # noqa: F401
+    import plugins.economy      # noqa: F401
+    import plugins.group_mgmt   # noqa: F401
+    print("✅ ᴘʟᴜɢɪɴs ʟᴏᴀᴅᴇᴅ.")
 
-    # ── Start the bot ─────────────────────────────────────────────────────────
-    print(f"🤖 Connecting {BOT_NAME}…")
     os.makedirs("sessions", exist_ok=True)
+    os.makedirs("assets",   exist_ok=True)
+
+    print(f"🤖 ᴄᴏɴɴᴇᴄᴛɪɴɢ {BOT_NAME}…")
     async with client:
         me = await client.get_me()
         print(
             f"\n{'='*52}\n"
-            f"  {BOT_NAME} is ONLINE!\n"
-            f"  Username : @{me.username}\n"
-            f"  Bot ID   : {me.id}\n"
+            f"  {BOT_NAME} ɪs ᴏɴʟɪɴᴇ!\n"
+            f"  ᴜsᴇʀɴᴀᴍᴇ : @{me.username}\n"
+            f"  ʙᴏᴛ ɪᴅ   : {me.id}\n"
             f"  {POWERED_BY}\n"
             f"{'='*52}\n"
         )

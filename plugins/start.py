@@ -1,18 +1,20 @@
 """
-MadaraDefaultr – Start / Help / Wallet handlers
+MadaraDefaultr – Start / Help / Navigation handlers
 Powered by Madara
 """
 
+import os
 import MadaraDefaultr as app
 from pyrogram import filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
 from database import get_or_create_user, get_top_users, get_user_rank
 from utils.buttons import (
-    start_keyboard, games_keyboard, keyboard,
-    primary_btn, success_btn, danger_btn, btn,
+    start_keyboard, games_keyboard, help_menu_keyboard,
+    help_back_keyboard, keyboard, primary_btn, success_btn,
+    danger_btn, btn,
 )
-from config import BOT_NAME, POWERED_BY, VERSION
+from config import BOT_NAME, POWERED_BY, VERSION, START_IMAGE
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -26,17 +28,24 @@ async def start_private(_, msg: Message):
         msg.from_user.username or "",
         msg.from_user.first_name or ""
     )
-    name = msg.from_user.first_name or "Player"
-    text = (
-        f"👑 <b>Welcome to {BOT_NAME}, {name}!</b> 👑\n\n"
-        f"🔥 The <b>ultimate gaming bot</b> on Telegram!\n"
-        f"Play Card Games, Bomb Passes, Password Hacking — win coins & rule the leaderboard!\n\n"
-        f"🪙 <b>Your Balance:</b> <code>{user['coins']:,}</code> coins\n"
-        f"⭐ <b>Wins:</b> <code>{user['wins']}</code>  "
-        f"💔 <b>Losses:</b> <code>{user['losses']}</code>\n\n"
+    name = msg.from_user.first_name or "ᴘʟᴀʏᴇʀ"
+    caption = (
+        f"👑 <b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ {BOT_NAME}!</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"👋 ʜᴇʏ <b>{name}</b>! ɪ'ᴍ ᴛʜᴇ ᴜʟᴛɪᴍᴀᴛᴇ ɢᴀᴍɪɴɢ ʙᴏᴛ!\n\n"
+        f"🎮 ᴘʟᴀʏ ᴄᴀʀᴅ ɢᴀᴍᴇs, ʙᴏᴍʙ ᴘᴀssᴇs &amp; ʜᴀᴄᴋɪɴɢ\n"
+        f"⚔️ ᴀᴛᴛᴀᴄᴋ, ʀᴏʙ &amp; ᴅᴏᴍɪɴᴀᴛᴇ ᴏᴛʜᴇʀ ᴘʟᴀʏᴇʀs\n"
+        f"💘 ᴘʀᴏᴘᴏsᴇ, ᴍᴀʀʀʏ &amp; ᴇɴᴊᴏʏ ʀᴇᴡᴀʀᴅs\n"
+        f"💰 ᴇᴀʀɴ ᴅᴀɪʟʏ ᴄᴏɪɴs &amp; ᴄʟɪᴍʙ ᴛʜᴇ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ!\n\n"
+        f"🪙 <b>ʙᴀʟᴀɴᴄᴇ:</b> <code>{user['coins']:,}</code>  "
+        f"⭐ <b>ᴡɪɴs:</b> <code>{user['wins']}</code>\n\n"
         f"<i>{POWERED_BY} | {VERSION}</i>"
     )
-    await msg.reply(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
+    if os.path.exists(START_IMAGE):
+        await msg.reply_photo(START_IMAGE, caption=caption,
+                              reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
+    else:
+        await msg.reply(caption, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 @app.on_message(filters.command("start") & filters.group)
@@ -47,110 +56,180 @@ async def start_group(_, msg: Message):
         msg.from_user.first_name or ""
     )
     text = (
-        f"🔥 <b>{BOT_NAME} is here!</b>\n\n"
-        f"🃏 /card — Card Flip Game\n"
-        f"💣 /bomb — Bomb Passing Game\n"
-        f"🔐 /hack — Password Hacking\n"
-        f"💰 /balance — Your coins\n\n"
-        f"Type /help for all commands.\n\n"
+        f"🔥 <b>{BOT_NAME} ɪs ʜᴇʀᴇ!</b>\n\n"
+        f"🎮 /card  💣 /bomb  🔐 /hack\n"
+        f"💰 /daily  🎁 /claim  ⚔️ /kill\n"
+        f"💘 /propose  🛒 /shop  📊 /ping\n\n"
+        f"ᴛʏᴘᴇ /help ғᴏʀ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs!\n\n"
         f"<i>{POWERED_BY}</i>"
     )
     await msg.reply(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  /help
+#  /help  → category buttons
 # ═══════════════════════════════════════════════════════════════════════════════
-
-HELP_TEXT = """
-<b>🃏 Card Game</b>
-/card — Start a new card game
-/bet &lt;amount&gt; — Join an ongoing game
-/flip a/b/c/d — Play your card this round
-
-<b>💣 Bomb Game</b>
-/bomb &lt;amount&gt; — Start with entry fee
-/join &lt;amount&gt; — Join before game starts
-/pass — Pass the bomb
-/rank — Your rank
-/leaders — Bomb leaderboard
-/bombcancel — (Admin) Cancel &amp; refund
-
-<b>🔐 Hack Game</b>
-/hack &lt;amount&gt; &lt;digit 3-6&gt; — Host a hack game
-/register &lt;amount&gt; coins — Join the game
-/guess &lt;number&gt; — Make your guess
-/end — (Host) End the game
-
-<b>💰 Wallet &amp; Stats</b>
-/balance — Your coin balance
-/wallet — Full wallet overview
-/top — Global leaderboard
-"""
-
 
 @app.on_message(filters.command("help"))
 async def help_cmd(_, msg: Message):
     await msg.reply(
-        f"💡 <b>{BOT_NAME} — Command Guide</b>\n{HELP_TEXT}\n<i>{POWERED_BY}</i>",
+        f"📖 <b>{BOT_NAME} — ʜᴇʟᴘ ᴄᴇɴᴛʀᴇ</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"ᴄʜᴏᴏsᴇ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ʙᴇʟᴏᴡ ᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs:\n\n"
+        f"🎮 <b>ɢᴀᴍᴇs</b> — ᴄᴀʀᴅ, ʙᴏᴍʙ, ʜᴀᴄᴋ\n"
+        f"💰 <b>ᴇᴄᴏɴᴏᴍʏ</b> — ᴅᴀɪʟʏ, sʜᴏᴘ, ᴛʀᴀᴅᴇ\n"
+        f"💘 <b>sᴏᴄɪᴀʟ</b> — ᴘʀᴏᴘᴏsᴇ, ᴍᴀʀʀʏ, ᴄᴏᴜᴘʟᴇ\n"
+        f"⚔️ <b>ʀᴘɢ & ᴄᴏᴍʙᴀᴛ</b> — ᴋɪʟʟ, ʀᴏʙ, ᴘʀᴏᴛᴇᴄᴛ\n"
+        f"⛩️ <b>ɢʀᴏᴜᴘ ᴍɢᴍᴛ</b> — ʙᴀɴ, ᴍᴜᴛᴇ, ᴡᴇʟᴄᴏᴍᴇ\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=help_menu_keyboard()
+    )
+
+
+# ─── help category callbacks ──────────────────────────────────────────────────
+
+@app.on_callback_query(filters.regex("^help_menu$"))
+async def cb_help_menu(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"📖 <b>{BOT_NAME} — ʜᴇʟᴘ ᴄᴇɴᴛʀᴇ</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"ᴄʜᴏᴏsᴇ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ʙᴇʟᴏᴡ ᴛᴏ sᴇᴇ ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs:\n\n"
+        f"🎮 ɢᴀᴍᴇs — ᴄᴀʀᴅ, ʙᴏᴍʙ, ʜᴀᴄᴋ\n"
+        f"💰 ᴇᴄᴏɴᴏᴍʏ — ᴅᴀɪʟʏ, sʜᴏᴘ, ᴛʀᴀᴅᴇ\n"
+        f"💘 sᴏᴄɪᴀʟ — ᴘʀᴏᴘᴏsᴇ, ᴍᴀʀʀʏ, ᴄᴏᴜᴘʟᴇ\n"
+        f"⚔️ ʀᴘɢ — ᴋɪʟʟ, ʀᴏʙ, ᴘʀᴏᴛᴇᴄᴛ\n"
+        f"⛩️ ɢʀᴏᴜᴘ — ʙᴀɴ, ᴍᴜᴛᴇ, ᴡᴇʟᴄᴏᴍᴇ\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=help_menu_keyboard()
+    )
+
+
+@app.on_callback_query(filters.regex("^help_games$"))
+async def cb_help_games(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"🎮 <b>ɢᴀᴍᴇs ᴄᴏᴍᴍᴀɴᴅs</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"🃏 /card — sᴛᴀʀᴛ ᴄᴀʀᴅ ғʟɪᴘ ɢᴀᴍᴇ\n"
+        f"   ↳ /bet &lt;ᴀᴍᴏᴜɴᴛ&gt; — ᴊᴏɪɴ ɢᴀᴍᴇ\n"
+        f"   ↳ /flip a/b/c/d — ᴘʟᴀʏ ʏᴏᴜʀ ᴄᴀʀᴅ\n\n"
+        f"💣 /bomb &lt;ᴀᴍᴏᴜɴᴛ&gt; — sᴛᴀʀᴛ ʙᴏᴍʙ ɢᴀᴍᴇ\n"
+        f"   ↳ /join &lt;ᴀᴍᴏᴜɴᴛ&gt; — ᴊᴏɪɴ\n"
+        f"   ↳ /pass — ᴘᴀss ᴛʜᴇ ʙᴏᴍʙ\n"
+        f"   ↳ /bombcancel — ᴄᴀɴᴄᴇʟ (ᴀᴅᴍɪɴ)\n\n"
+        f"🔐 /hack &lt;ʀᴇᴡᴀʀᴅ&gt; &lt;ᴅɪɢɪᴛs&gt; — ʜᴏsᴛ ʜᴀᴄᴋ\n"
+        f"   ↳ /register &lt;ᴀᴍᴏᴜɴᴛ&gt; — ᴊᴏɪɴ\n"
+        f"   ↳ /guess &lt;ɴᴜᴍʙᴇʀ&gt; — ɢᴜᴇss\n"
+        f"   ↳ /end — ᴇɴᴅ ɢᴀᴍᴇ (ʜᴏsᴛ)\n\n"
+        f"🏆 /rank — ʏᴏᴜʀ ʀᴀɴᴋ\n"
+        f"📊 /leaders — ʙᴏᴍʙ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ\n\n"
+        f"<i>{POWERED_BY}</i>",
         parse_mode=ParseMode.HTML,
         reply_markup=keyboard(
-            [primary_btn("🎮 Games", data="games_menu")],
-            [btn("🔙 Back to Start", data="start")],
+            [primary_btn("🃏 ᴄᴀʀᴅ ɪɴғᴏ", data="info_card"),
+             danger_btn("💣 ʙᴏᴍʙ ɪɴғᴏ",   data="info_bomb")],
+            [success_btn("🔐 ʜᴀᴄᴋ ɪɴғᴏ",  data="info_hack")],
+            [btn("🔙 ʙᴀᴄᴋ", data="help_menu")],
         )
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  /balance  /wallet
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@app.on_message(filters.command(["balance", "wallet"]))
-async def wallet_cmd(_, msg: Message):
-    user = await get_or_create_user(
-        msg.from_user.id,
-        msg.from_user.username or "",
-        msg.from_user.first_name or ""
+@app.on_callback_query(filters.regex("^help_economy$"))
+async def cb_help_economy(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"💰 <b>ᴇᴄᴏɴᴏᴍʏ ᴄᴏᴍᴍᴀɴᴅs</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"🪙 /bal [@ᴜsᴇʀ] — ᴄʜᴇᴄᴋ ʙᴀʟᴀɴᴄᴇ\n"
+        f"📅 /daily — ᴄʟᴀɪᴍ ᴅᴀɪʟʏ sᴛʀᴇᴀᴋ ʀᴇᴡᴀʀᴅ\n"
+        f"   ↳ sᴛʀᴇᴀᴋ ʙᴏɴᴜs ɪɴᴄʀᴇᴀsᴇs ᴇᴀᴄʜ ᴅᴀʏ!\n\n"
+        f"🎁 /claim — ɢʀᴏᴜᴘ ʙᴏɴᴜs 2,000 ᴄᴏɪɴs\n"
+        f"   ↳ ᴄᴏᴏʟᴅᴏᴡɴ: 24 ʜᴏᴜʀs ᴘᴇʀ ɢʀᴏᴜᴘ\n\n"
+        f"💸 /give &lt;ᴀᴍᴏᴜɴᴛ&gt; — ᴛʀᴀɴsғᴇʀ ᴄᴏɪɴs\n"
+        f"   ↳ ᴛᴀx: 10% (5% ɪғ ᴍᴀʀʀɪᴇᴅ ᴛᴏ ᴛᴀʀɢᴇᴛ)\n\n"
+        f"🛒 /shop — ʙʀᴏᴡsᴇ ᴡᴇᴀᴘᴏɴs &amp; ᴀʀᴍᴏʀ\n"
+        f"🎒 /inventory — ᴠɪᴇᴡ ʏᴏᴜʀ ɪᴛᴇᴍs\n"
+        f"🏆 /top — ɢʟᴏʙᴀʟ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard(
+            [primary_btn("🛒 ᴏᴘᴇɴ sʜᴏᴘ", data="open_shop")],
+            [btn("🔙 ʙᴀᴄᴋ", data="help_menu")],
+        )
     )
-    rank = await get_user_rank(msg.from_user.id)
-    name = msg.from_user.first_name or "Player"
-    text = (
-        f"👑 <b>Wallet — {name}</b>\n\n"
-        f"🪙 <b>Coins:</b> <code>{user['coins']:,}</code>\n"
-        f"🏆 <b>Wins:</b> <code>{user['wins']}</code>\n"
-        f"💔 <b>Losses:</b> <code>{user['losses']}</code>\n"
-        f"🎮 <b>Games Played:</b> <code>{user['games_played']}</code>\n"
-        f"💎 <b>Global Rank:</b> #{rank}\n\n"
-        f"<i>{POWERED_BY}</i>"
+
+
+@app.on_callback_query(filters.regex("^help_social$"))
+async def cb_help_social(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"💘 <b>sᴏᴄɪᴀʟ & ʀᴏᴍᴀɴᴄᴇ ᴄᴏᴍᴍᴀɴᴅs</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"💍 /propose — ʀᴇᴘʟʏ ᴛᴏ ᴘʀᴏᴘᴏsᴇ ᴍᴀʀʀɪᴀɢᴇ\n"
+        f"   ↳ ʙᴇɴᴇғɪᴛ: 5% ᴛᴀx ʀᴇᴅᴜᴄᴛɪᴏɴ ᴏɴ /give\n\n"
+        f"💑 /marry — ᴀᴄᴄᴇᴘᴛ ᴘʀᴏᴘᴏsᴀʟ / ᴄʜᴇᴄᴋ sᴛᴀᴛᴜs\n\n"
+        f"💔 /divorce — ᴇɴᴅ ᴍᴀʀʀɪᴀɢᴇ\n"
+        f"   ↳ ᴄᴏsᴛ: 2,000 ᴄᴏɪɴs\n\n"
+        f"💞 /couple — ᴍᴀᴛᴄʜᴍᴀᴋɪɴɢ ᴡɪᴛʜ ɢʀᴏᴜᴘ ᴍᴇᴍʙᴇʀs\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=help_back_keyboard()
     )
-    await msg.reply(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
-        [primary_btn("🏆 Leaderboard", data="leaderboard")],
-        [btn("🔙 Back", data="start")],
-    ))
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  /top
-# ═══════════════════════════════════════════════════════════════════════════════
-
-@app.on_message(filters.command("top"))
-async def top_cmd(_, msg: Message):
-    users = await get_top_users(10)
-    medals = ["🥇", "🥈", "🥉"] + ["🔸"] * 7
-    lines = []
-    for i, u in enumerate(users):
-        n = u["first_name"] or u["username"] or "Unknown"
-        lines.append(f"{medals[i]} <b>{n}</b> — <code>{u['coins']:,}</code> coins")
-    text = (
-        f"🏆 <b>Global Leaderboard</b>\n\n"
-        + "\n".join(lines)
-        + f"\n\n<i>{POWERED_BY}</i>"
+@app.on_callback_query(filters.regex("^help_combat$"))
+async def cb_help_combat(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"⚔️ <b>ʀᴘɢ & ᴄᴏᴍʙᴀᴛ ᴄᴏᴍᴍᴀɴᴅs</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"💀 /kill — ʀᴇᴘʟʏ ᴛᴏ ᴀᴛᴛᴀᴄᴋ ᴀ ᴘʟᴀʏᴇʀ\n"
+        f"   ↳ 50% sᴜᴄᴄᴇss | ʟᴏᴏᴛ 20-40% ʙᴀʟᴀɴᴄᴇ\n"
+        f"   ↳ ᴄᴏᴏʟᴅᴏᴡɴ: 1 ʜᴏᴜʀ\n\n"
+        f"🔪 /rob &lt;ᴀᴍᴏᴜɴᴛ&gt; — sᴛᴇᴀʟ ᴄᴏɪɴs\n"
+        f"   ↳ ʀᴇQᴜɪʀᴇs ᴡᴇᴀᴘᴏɴ ғʀᴏᴍ /shop\n\n"
+        f"🛡️ /protect 1d — 24ʜ ᴘʀᴏᴛᴇᴄᴛɪᴏɴ sʜɪᴇʟᴅ\n"
+        f"   ↳ ᴄᴏsᴛ: 1,000 ᴄᴏɪɴs\n\n"
+        f"✨ /revive — ɪɴsᴛᴀɴᴛ ʀᴇᴠɪᴠᴀʟ\n"
+        f"   ↳ ᴄᴏsᴛ: 500 ᴄᴏɪɴs\n\n"
+        f"📊 /status — ᴠɪᴇᴡ ʏᴏᴜʀ ᴄᴏᴍʙᴀᴛ sᴛᴀᴛs\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=help_back_keyboard()
     )
-    await msg.reply(text, parse_mode=ParseMode.HTML)
+
+
+@app.on_callback_query(filters.regex("^help_group$"))
+async def cb_help_group(_, cq: CallbackQuery):
+    await cq.edit_message_text(
+        f"⛩️ <b>ɢʀᴏᴜᴘ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ ᴄᴏᴍᴍᴀɴᴅs</b>\n"
+        f"━━━━━━━━━━━━━━━━━\n\n"
+        f"🏓 /ping — ᴄʜᴇᴄᴋ ʙᴏᴛ ʟᴀᴛᴇɴᴄʏ & sᴛᴀᴛᴜs\n"
+        f"📊 /stats — ɢʀᴏᴜᴘ sᴛᴀᴛɪsᴛɪᴄs\n"
+        f"👮 /staff — ʟɪsᴛ ᴀᴅᴍɪɴs\n"
+        f"🤖 /bots — ʟɪsᴛ ʙᴏᴛs\n\n"
+        f"<b>ᴀᴅᴍɪɴ ᴏɴʟʏ:</b>\n"
+        f"👋 /welcome on/off — ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇs\n"
+        f"📌 /pin — ᴘɪɴ ᴍᴇssᴀɢᴇ (ʀᴇᴘʟʏ)\n"
+        f"📌 /pinned — sʜᴏᴡ ᴘɪɴɴᴇᴅ ᴍsɢ\n"
+        f"📌 /unpin — ᴜɴᴘɪɴ ᴍᴇssᴀɢᴇ\n"
+        f"🚫 /ban — ʙᴀɴ ᴜsᴇʀ\n"
+        f"✅ /unban — ᴜɴʙᴀɴ ᴜsᴇʀ\n"
+        f"👢 /kick — ᴋɪᴄᴋ ᴜsᴇʀ\n"
+        f"🔇 /mute — ᴍᴜᴛᴇ ᴜsᴇʀ\n"
+        f"🔊 /unmute — ᴜɴᴍᴜᴛᴇ ᴜsᴇʀ\n"
+        f"✏️ /settitle &lt;ɴᴀᴍᴇ&gt; — sᴇᴛ ᴛɪᴛʟᴇ\n"
+        f"📝 /setdesc &lt;ᴛᴇxᴛ&gt; — sᴇᴛ ᴅᴇsᴄ\n"
+        f"🖼 /setphoto — sᴇᴛ ᴘʜᴏᴛᴏ (ʀᴇᴘʟʏ)\n"
+        f"🗑 /removephoto — ᴄʟᴇᴀʀ ᴘʜᴏᴛᴏ\n"
+        f"🧟 /zombies — ᴋɪᴄᴋ ᴅᴇʟᴇᴛᴇᴅ ᴀᴄᴄs\n"
+        f"🕵️ /imposter on/off — ᴜsᴇʀɴᴀᴍᴇ ᴡᴀᴛᴄʜᴇʀ\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=help_back_keyboard()
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Callbacks – navigation
+#  Navigation callbacks
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.on_callback_query(filters.regex("^start$"))
@@ -160,23 +239,23 @@ async def cb_start(_, cq: CallbackQuery):
         cq.from_user.username or "",
         cq.from_user.first_name or ""
     )
-    name = cq.from_user.first_name or "Player"
-    text = (
-        f"👑 <b>Welcome back, {name}!</b>\n\n"
+    name = cq.from_user.first_name or "ᴘʟᴀʏᴇʀ"
+    await cq.edit_message_text(
+        f"👑 <b>ᴡᴇʟᴄᴏᴍᴇ ʙᴀᴄᴋ, {name}!</b>\n\n"
         f"🔥 <b>{BOT_NAME}</b>\n\n"
-        f"🪙 <b>Balance:</b> <code>{user['coins']:,}</code> coins\n\n"
-        f"<i>{POWERED_BY} | {VERSION}</i>"
+        f"🪙 <b>ʙᴀʟᴀɴᴄᴇ:</b> <code>{user['coins']:,}</code> ᴄᴏɪɴs\n\n"
+        f"<i>{POWERED_BY} | {VERSION}</i>",
+        reply_markup=start_keyboard(), parse_mode=ParseMode.HTML
     )
-    await cq.edit_message_text(text, reply_markup=start_keyboard(), parse_mode=ParseMode.HTML)
 
 
 @app.on_callback_query(filters.regex("^games_menu$"))
 async def cb_games(_, cq: CallbackQuery):
     await cq.edit_message_text(
-        f"⚔️ <b>Choose Your Game</b>\n\n"
-        f"🃏 <b>Card Game</b> — flip cards, highest wins\n"
-        f"💣 <b>Bomb Game</b> — pass the bomb, last alive wins\n"
-        f"🔐 <b>Hack Game</b> — guess the secret password\n\n"
+        f"⚔️ <b>ᴄʜᴏᴏsᴇ ʏᴏᴜʀ ɢᴀᴍᴇ</b>\n\n"
+        f"🃏 <b>ᴄᴀʀᴅ ɢᴀᴍᴇ</b> — ғʟɪᴘ ᴄᴀʀᴅs, ʜɪɢʜᴇsᴛ ᴡɪɴs\n"
+        f"💣 <b>ʙᴏᴍʙ ɢᴀᴍᴇ</b> — ᴘᴀss ᴛʜᴇ ʙᴏᴍʙ, ʟᴀsᴛ ᴀʟɪᴠᴇ ᴡɪɴs\n"
+        f"🔐 <b>ʜᴀᴄᴋ ɢᴀᴍᴇ</b> — ɢᴜᴇss ᴛʜᴇ sᴇᴄʀᴇᴛ ᴘᴀssᴡᴏʀᴅ\n\n"
         f"<i>{POWERED_BY}</i>",
         reply_markup=games_keyboard(), parse_mode=ParseMode.HTML
     )
@@ -185,102 +264,117 @@ async def cb_games(_, cq: CallbackQuery):
 @app.on_callback_query(filters.regex("^wallet$"))
 async def cb_wallet(_, cq: CallbackQuery):
     user = await get_or_create_user(
-        cq.from_user.id,
-        cq.from_user.username or "",
-        cq.from_user.first_name or ""
+        cq.from_user.id, cq.from_user.username or "", cq.from_user.first_name or ""
     )
     rank = await get_user_rank(cq.from_user.id)
-    name = cq.from_user.first_name or "Player"
-    text = (
-        f"👑 <b>Wallet — {name}</b>\n\n"
-        f"🪙 Coins: <code>{user['coins']:,}</code>\n"
-        f"🏆 Wins: <code>{user['wins']}</code>\n"
-        f"💔 Losses: <code>{user['losses']}</code>\n"
-        f"🎮 Games: <code>{user['games_played']}</code>\n"
-        f"💎 Rank: #{rank}\n\n"
-        f"<i>{POWERED_BY}</i>"
+    name = cq.from_user.first_name or "ᴘʟᴀʏᴇʀ"
+    await cq.edit_message_text(
+        f"👑 <b>ᴡᴀʟʟᴇᴛ — {name}</b>\n\n"
+        f"🪙 ᴄᴏɪɴs: <code>{user['coins']:,}</code>\n"
+        f"🏆 ᴡɪɴs: <code>{user['wins']}</code>\n"
+        f"💔 ʟᴏssᴇs: <code>{user['losses']}</code>\n"
+        f"🎮 ɢᴀᴍᴇs: <code>{user['games_played']}</code>\n"
+        f"💎 ʀᴀɴᴋ: #{rank}\n\n"
+        f"<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard(
+            [primary_btn("🏆 ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ", data="leaderboard")],
+            [btn("🔙 ʙᴀᴄᴋ", data="start")],
+        )
     )
-    await cq.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
-        [primary_btn("🏆 Leaderboard", data="leaderboard")],
-        [btn("🔙 Back", data="start")],
-    ))
 
 
 @app.on_callback_query(filters.regex("^leaderboard$"))
 async def cb_leaderboard(_, cq: CallbackQuery):
     users  = await get_top_users(10)
     medals = ["🥇", "🥈", "🥉"] + ["🔸"] * 7
-    lines  = []
-    for i, u in enumerate(users):
-        n = u["first_name"] or u["username"] or "Unknown"
-        lines.append(f"{medals[i]} <b>{n}</b> — <code>{u['coins']:,}</code>")
-    text = f"🏆 <b>Global Leaderboard</b>\n\n" + "\n".join(lines) + f"\n\n<i>{POWERED_BY}</i>"
-    await cq.edit_message_text(text, parse_mode=ParseMode.HTML, reply_markup=keyboard(
-        [btn("🔙 Back", data="start")],
-    ))
-
-
-@app.on_callback_query(filters.regex("^help$"))
-async def cb_help(_, cq: CallbackQuery):
+    lines  = [
+        f"{medals[i]} <b>{u['first_name'] or u['username'] or 'Unknown'}</b> — <code>{u['coins']:,}</code>"
+        for i, u in enumerate(users)
+    ]
     await cq.edit_message_text(
-        f"💡 <b>{BOT_NAME} — Command Guide</b>\n{HELP_TEXT}\n<i>{POWERED_BY}</i>",
+        f"🏆 <b>ɢʟᴏʙᴀʟ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n" + "\n".join(lines) + f"\n\n<i>{POWERED_BY}</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=keyboard([btn("🔙 Back", data="start")])
+        reply_markup=keyboard([btn("🔙 ʙᴀᴄᴋ", data="start")])
     )
 
+
+@app.on_callback_query(filters.regex("^open_shop$"))
+async def cb_open_shop(_, cq: CallbackQuery):
+    from utils.buttons import shop_keyboard
+    from config import SHOP_ITEMS
+    lines = [
+        f"{it['name']} — <code>{it['price']:,}</code>\n  ↳ {it['desc']}"
+        for it in SHOP_ITEMS.values()
+    ]
+    await cq.edit_message_text(
+        f"🛒 <b>ᴍᴀᴅᴀʀᴀ sʜᴏᴘ</b>\n\n" + "\n\n".join(lines) +
+        f"\n\n<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=shop_keyboard()
+    )
+
+
+# ─── Game info callbacks ──────────────────────────────────────────────────────
 
 @app.on_callback_query(filters.regex("^info_card$"))
 async def cb_info_card(_, cq: CallbackQuery):
     await cq.edit_message_text(
-        f"🃏 <b>Card Game Rules</b>\n\n"
-        "• Each player gets 4 hidden cards: A, B, C, D\n"
-        "• Cards sum is equal for all players — only strategy wins!\n"
-        "• Each round, flip one card — highest card wins the round\n"
-        "• 4 rounds total — highest score wins the pot 🏆\n"
-        "• 60-second timer per turn (auto-play if you miss)\n"
-        "• Each card can only be used once\n"
-        "• Tie = random winner\n\n"
-        "<b>Commands:</b>\n"
-        "/card — Start | /bet &lt;amount&gt; — Join | /flip a/b/c/d — Play\n\n"
+        f"🃏 <b>ᴄᴀʀᴅ ɢᴀᴍᴇ ʀᴜʟᴇs</b>\n\n"
+        "• ᴇᴀᴄʜ ᴘʟᴀʏᴇʀ ɢᴇᴛs 4 ʜɪᴅᴅᴇɴ ᴄᴀʀᴅs: ᴀ, ʙ, ᴄ, ᴅ\n"
+        "• ᴄᴀʀᴅ sᴜᴍ ɪs ᴇQᴜᴀʟ — ᴏɴʟʏ sᴛʀᴀᴛᴇɢʏ ᴡɪɴs!\n"
+        "• ᴇᴀᴄʜ ʀᴏᴜɴᴅ, ғʟɪᴘ ᴏɴᴇ — ʜɪɢʜᴇsᴛ ᴡɪɴs\n"
+        "• 4 ʀᴏᴜɴᴅs — ʜɪɢʜᴇsᴛ sᴄᴏʀᴇ ᴡɪɴs ᴛʜᴇ ᴘᴏᴛ 🏆\n"
+        "• 60s ᴛɪᴍᴇʀ ᴘᴇʀ ᴛᴜʀɴ\n\n"
+        "<b>ᴄᴏᴍᴍᴀɴᴅs:</b> /card | /bet | /flip a/b/c/d\n\n"
         f"<i>{POWERED_BY}</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=keyboard([btn("🔙 Back", data="games_menu")])
+        reply_markup=keyboard([btn("🔙 ʙᴀᴄᴋ", data="help_games")])
     )
 
 
 @app.on_callback_query(filters.regex("^info_bomb$"))
 async def cb_info_bomb(_, cq: CallbackQuery):
     await cq.edit_message_text(
-        f"💣 <b>Bomb Game Rules</b>\n\n"
-        "• Pay entry fee to join\n"
-        "• A bomb is secretly assigned to one player\n"
-        "• Use /pass to pass it — bomb explodes randomly each round 💥\n"
-        "• Last player alive wins the pot!\n"
-        "• Admins: /bombcancel to cancel &amp; refund\n\n"
-        "<b>Commands:</b>\n"
-        "/bomb &lt;amount&gt; — Start | /join &lt;amount&gt; — Join\n"
-        "/pass — Pass | /rank — Rank | /leaders — Leaderboard\n\n"
+        f"💣 <b>ʙᴏᴍʙ ɢᴀᴍᴇ ʀᴜʟᴇs</b>\n\n"
+        "• ᴘᴀʏ ᴇɴᴛʀʏ ғᴇᴇ ᴛᴏ ᴊᴏɪɴ\n"
+        "• ᴀ ʙᴏᴍʙ ɪs sᴇᴄʀᴇᴛʟʏ ᴀssɪɢɴᴇᴅ\n"
+        "• ᴜsᴇ /pass — ʙᴏᴍʙ ᴇxᴘʟᴏᴅᴇs ʀᴀɴᴅᴏᴍʟʏ 💥\n"
+        "• ʟᴀsᴛ ᴘʟᴀʏᴇʀ ᴀʟɪᴠᴇ ᴡɪɴs!\n\n"
+        "<b>ᴄᴏᴍᴍᴀɴᴅs:</b> /bomb | /join | /pass | /rank\n\n"
         f"<i>{POWERED_BY}</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=keyboard([btn("🔙 Back", data="games_menu")])
+        reply_markup=keyboard([btn("🔙 ʙᴀᴄᴋ", data="help_games")])
     )
 
 
 @app.on_callback_query(filters.regex("^info_hack$"))
 async def cb_info_hack(_, cq: CallbackQuery):
     await cq.edit_message_text(
-        f"🔐 <b>Hack Game Rules</b>\n\n"
-        "• Host sets a secret password (3-6 digits) + reward\n"
-        "• Players register with an entry fee\n"
-        "• Guess with /guess &lt;number&gt;\n"
-        "• After each guess:\n"
-        "  🟢 <b>HACKS</b> = correct digit, correct position\n"
-        "  🟡 <b>GLITCHES</b> = correct digit, wrong position\n"
-        "• First to crack it wins the pot!\n\n"
-        "<b>Commands:</b>\n"
-        "/hack &lt;amount&gt; &lt;digits&gt; — Host | /register &lt;amount&gt; — Join\n"
-        "/guess &lt;pass&gt; — Guess | /end — End\n\n"
+        f"🔐 <b>ʜᴀᴄᴋ ɢᴀᴍᴇ ʀᴜʟᴇs</b>\n\n"
+        "• ʜᴏsᴛ sᴇᴛs ᴀ sᴇᴄʀᴇᴛ ᴘᴀssᴡᴏʀᴅ (3-6 ᴅɪɢɪᴛs)\n"
+        "• ᴘʟᴀʏᴇʀs ʀᴇɢɪsᴛᴇʀ & ɢᴜᴇss\n"
+        "• 🟢 ʜᴀᴄᴋs = ʀɪɢʜᴛ ᴅɪɢɪᴛ, ʀɪɢʜᴛ ᴘᴏs\n"
+        "• 🟡 ɢʟɪᴛᴄʜᴇs = ʀɪɢʜᴛ ᴅɪɢɪᴛ, ᴡʀᴏɴɢ ᴘᴏs\n"
+        "• ғɪʀsᴛ ᴛᴏ ᴄʀᴀᴄᴋ ᴡɪɴs!\n\n"
+        "<b>ᴄᴏᴍᴍᴀɴᴅs:</b> /hack | /register | /guess | /end\n\n"
         f"<i>{POWERED_BY}</i>",
         parse_mode=ParseMode.HTML,
-        reply_markup=keyboard([btn("🔙 Back", data="games_menu")])
+        reply_markup=keyboard([btn("🔙 ʙᴀᴄᴋ", data="help_games")])
+    )
+
+
+# ─── /top ─────────────────────────────────────────────────────────────────────
+
+@app.on_message(filters.command("top"))
+async def top_cmd(_, msg: Message):
+    users  = await get_top_users(10)
+    medals = ["🥇", "🥈", "🥉"] + ["🔸"] * 7
+    lines  = [
+        f"{medals[i]} <b>{u['first_name'] or u['username'] or 'Unknown'}</b> — <code>{u['coins']:,}</code> ᴄᴏɪɴs"
+        for i, u in enumerate(users)
+    ]
+    await msg.reply(
+        f"🏆 <b>ɢʟᴏʙᴀʟ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n" + "\n".join(lines) + f"\n\n<i>{POWERED_BY}</i>",
+        parse_mode=ParseMode.HTML
     )
