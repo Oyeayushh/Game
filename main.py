@@ -51,6 +51,7 @@ async def main():
     import plugins.rpg          # noqa: F401
     import plugins.economy      # noqa: F401
     import plugins.group_mgmt   # noqa: F401
+    import plugins.chatbot      # noqa: F401
     print("✅ ᴘʟᴜɢɪɴs ʟᴏᴀᴅᴇᴅ.")
 
     os.makedirs("sessions", exist_ok=True)
