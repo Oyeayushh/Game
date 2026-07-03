@@ -38,10 +38,10 @@ GROQ_MODEL   = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 
 _mongo    = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=8000) if MONGO_URI else None
-_db       = _mongo["madara_chatbot"] if _mongo else None
-_settings = _db["chatbot_settings"] if _db else None   # {chat_id, enabled}
-_stickers = _db["chatbot_stickers"] if _db else None   # {chat_id, file_id}
-_history  = _db["chatbot_history"] if _db else None    # {chat_id, turns:[...]}
+_db       = _mongo["madara_chatbot"] if _mongo is not None else None
+_settings = _db["chatbot_settings"] if _db is not None else None   # {chat_id, enabled}
+_stickers = _db["chatbot_stickers"] if _db is not None else None   # {chat_id, file_id}
+_history  = _db["chatbot_history"] if _db is not None else None    # {chat_id, turns:[...]}
 
 STICKER_POOL_CAP = 100
 HISTORY_LIMIT    = 8
