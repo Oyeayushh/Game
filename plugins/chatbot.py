@@ -37,7 +37,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL   = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 
-_mongo    = AsyncIOMotorClient(MONGO_URI) if MONGO_URI else None
+_mongo    = AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=8000) if MONGO_URI else None
 _db       = _mongo["madara_chatbot"] if _mongo else None
 _settings = _db["chatbot_settings"] if _db else None   # {chat_id, enabled}
 _stickers = _db["chatbot_stickers"] if _db else None   # {chat_id, file_id}
@@ -45,6 +45,24 @@ _history  = _db["chatbot_history"] if _db else None    # {chat_id, turns:[...]}
 
 STICKER_POOL_CAP = 100
 HISTORY_LIMIT    = 8
+
+
+async def _startup_ping():
+    if _mongo is None:
+        print("[chatbot] MONGO_URI not set — chatbot will stay disabled.")
+        return
+    try:
+        await _mongo.admin.command("ping")
+        print("[chatbot] MongoDB connected OK — /chatbot on|off is ready.")
+    except Exception as e:
+        print(f"[chatbot] MongoDB connection FAILED: {e}")
+
+
+try:
+    import asyncio
+    asyncio.get_event_loop().create_task(_startup_ping())
+except RuntimeError:
+    pass
 
 SYSTEM_PROMPT = (
     f"You are {BOT_NAME}, a fun, friendly Telegram group chatbot. "
@@ -73,8 +91,12 @@ def db_ready() -> bool:
 async def is_enabled(chat_id: int) -> bool:
     if not db_ready():
         return False
-    doc = await _settings.find_one({"chat_id": chat_id})
-    return bool(doc and doc.get("enabled", False))
+    try:
+        doc = await _settings.find_one({"chat_id": chat_id})
+        return bool(doc and doc.get("enabled", False))
+    except Exception as e:
+        print(f"[chatbot] mongo error in is_enabled: {e}")
+        return False
 
 
 async def set_enabled(chat_id: int, enabled: bool):
@@ -205,7 +227,16 @@ async def chatbot_cmd(_, msg: Message):
         return
 
     enable = action == "on"
-    await set_enabled(msg.chat.id, enable)
+    try:
+        await set_enabled(msg.chat.id, enable)
+    except Exception as e:
+        print(f"[chatbot] mongo error in set_enabled: {e}")
+        await msg.reply(
+            f"❌ ᴍᴏɴɢᴏ ᴄᴏɴɴᴇᴄᴛɪᴏɴ ғᴀɪʟᴇᴅ:\n<code>{e}</code>\n\n"
+            f"ᴄʜᴇᴄᴋ ʏᴏᴜʀ MONGO_URI ᴀɴᴅ ᴀᴛʟᴀs ɪᴘ ᴡʜɪᴛᴇʟɪsᴛ (0.0.0.0/0).\n\n<i>{POWERED_BY}</i>",
+            parse_mode=ParseMode.HTML,
+        )
+        return
     state = "✅ ᴇɴᴀʙʟᴇᴅ" if enable else "❌ ᴅɪsᴀʙʟᴇᴅ"
     extra = "\n\nᴛᴀʟᴋ ᴛᴏ ᴍᴇ ᴏʀ ᴛᴀɢ ᴍᴇ, ɪ'ʟʟ ʀᴇᴘʟʏ! 🤖" if enable else ""
     await msg.reply(f"🤖 ᴄʜᴀᴛʙᴏᴛ: <b>{state}</b>{extra}\n\n<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML)
