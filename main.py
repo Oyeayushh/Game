@@ -21,8 +21,9 @@ if _missing:
     )
 
 from pyrogram import Client, idle
+from pyrogram.enums import ParseMode
 from database import init_db
-from config import API_ID, API_HASH, BOT_TOKEN, BOT_NAME, POWERED_BY
+from config import API_ID, API_HASH, BOT_TOKEN, BOT_NAME, POWERED_BY, VERSION, LOGGER_ID
 
 
 async def main():
@@ -52,6 +53,7 @@ async def main():
     import plugins.economy      # noqa: F401
     import plugins.group_mgmt   # noqa: F401
     import plugins.chatbot      # noqa: F401
+    import plugins.logger       # noqa: F401
     print("✅ ᴘʟᴜɢɪɴs ʟᴏᴀᴅᴇᴅ.")
 
     os.makedirs("sessions", exist_ok=True)
@@ -68,6 +70,18 @@ async def main():
             f"  {POWERED_BY}\n"
             f"{'='*52}\n"
         )
+        if LOGGER_ID:
+            try:
+                await client.send_message(
+                    LOGGER_ID,
+                    f"✅ <b>{BOT_NAME} started!</b>\n\n"
+                    f"🆔 Bot: @{me.username}\n"
+                    f"🔖 Version: {VERSION}\n\n"
+                    f"<i>{POWERED_BY}</i>",
+                    parse_mode=ParseMode.HTML,
+                )
+            except Exception as e:
+                print(f"⚠️  ᴄᴏᴜʟᴅ ɴᴏᴛ sᴇɴᴅ sᴛᴀʀᴛᴜᴘ ʟᴏɢ: {e}")
         await idle()
 
 
