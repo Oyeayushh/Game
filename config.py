@@ -19,6 +19,10 @@ BOT_USERNAME  = "@SHRISTI_GAME_PLAYER_bot"
 POWERED_BY    = "⚡ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴀʀᴀ"
 VERSION       = "v2.0"
 
+# ── Logging / Owner ─────────────────────────────────────────────────────────
+LOGGER_ID = int(os.environ.get("LOGGER_ID", 0))   # chat/channel id where logs go
+OWNER_ID  = int(os.environ.get("OWNER_ID", 0))    # only this user can /broadcast
+
 # ── Database ────────────────────────────────────────────────────────────────
 DATABASE_PATH = "madara.db"
 
