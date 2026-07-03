@@ -69,6 +69,11 @@ CREATE TABLE IF NOT EXISTS welcome_settings (
     chat_id INTEGER PRIMARY KEY,
     enabled INTEGER DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS chats (
+    chat_id  INTEGER PRIMARY KEY,
+    title    TEXT DEFAULT '',
+    added_at REAL DEFAULT 0
+);
 """
 
 
@@ -310,3 +315,47 @@ async def set_welcome(chat_id: int, enabled: bool):
             (chat_id, int(enabled))
         )
         await db.commit()
+
+
+# ─── Chats (for logging / broadcast) ──────────────────────────────────────────
+
+async def add_chat(chat_id: int, title: str = ""):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            "INSERT INTO chats (chat_id, title, added_at) VALUES (?,?,?) "
+            "ON CONFLICT(chat_id) DO UPDATE SET title=excluded.title",
+            (chat_id, title, time.time())
+        )
+        await db.commit()
+
+
+async def remove_chat(chat_id: int):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("DELETE FROM chats WHERE chat_id=?", (chat_id,))
+        await db.commit()
+
+
+async def get_all_chats() -> list:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT chat_id FROM chats") as cur:
+            return [row[0] for row in await cur.fetchall()]
+
+
+async def get_all_users() -> list:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT user_id FROM users") as cur:
+            return [row[0] for row in await cur.fetchall()]
+
+
+async def get_chat_count() -> int:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM chats") as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0
+
+
+async def get_user_count() -> int:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT COUNT(*) FROM users") as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0
