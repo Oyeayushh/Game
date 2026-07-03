@@ -82,7 +82,22 @@ async def start_card_game(_, msg: Message):
     user = await get_or_create_user(msg.from_user.id,
                                     msg.from_user.username or "",
                                     msg.from_user.first_name or "")
-    entry_fee = 100  # default entry fee when hosting without /bet
+
+    entry_fee = 100  # default entry fee if no amount is given
+    args = msg.command
+    if len(args) >= 2:
+        try:
+            custom_fee = int(args[1])
+            if custom_fee <= 0:
+                raise ValueError
+            entry_fee = custom_fee
+        except ValueError:
+            await msg.reply(
+                f"❌ Invalid amount. Usage: <code>/card &lt;amount&gt;</code> (default 100)\n\n<i>{POWERED_BY}</i>",
+                parse_mode=ParseMode.HTML
+            )
+            return
+
     if user["coins"] < entry_fee:
         await msg.reply(
             f"❌ You need at least <b>{entry_fee:,}</b> coins to start.\n"
