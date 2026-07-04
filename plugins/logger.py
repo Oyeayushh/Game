@@ -36,6 +36,17 @@ async def _log(text: str):
         print(f"[logger] failed to send log: {e}")
 
 
+async def log_new_user(user_id: int, username: str, first_name: str):
+    tag = f"@{username}" if username else (first_name or "Unknown")
+    await _log(
+        f"🆕 <b>New user started the bot!</b>\n\n"
+        f"👤 Name: {first_name or 'Unknown'}\n"
+        f"🔗 Username: {tag}\n"
+        f"🆔 ID: <code>{user_id}</code>\n\n"
+        f"<i>{POWERED_BY}</i>"
+    )
+
+
 # ─── Passive chat tracking (so old groups are also known for /broadcast) ────
 
 @app.on_message(filters.group, group=99)
