@@ -32,7 +32,7 @@ from config import POWERED_BY, BOT_NAME, BOT_USERNAME
 
 # ─── Mongo setup ────────────────────────────────────────────────────────────
 
-MONGO_URI    = os.environ.get("MONGO_URI", "mongodb+srv://saranjaat9694:saranjaat435@cluster0.ofptc9e.mongodb.net/?appName=Cluster0")
+MONGO_URI    = os.environ.get("MONGO_URI", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL   = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
@@ -200,6 +200,15 @@ def _is_addressed_to_bot(msg: Message) -> bool:
     return f"@{uname}" in text
 
 
+def _is_not_command(_, __, msg: Message) -> bool:
+    """True for plain text that isn't a bot command (doesn't start with '/')."""
+    text = msg.text or ""
+    return not text.startswith("/")
+
+
+not_command = filters.create(_is_not_command)
+
+
 # ─── /chatbot on|off|status ─────────────────────────────────────────────────
 
 @app.on_message(filters.command("chatbot"))
@@ -281,12 +290,7 @@ async def sticker_handler(_, msg: Message):
 
 @app.on_message(
     filters.text
-    & ~filters.command([
-        "chatbot", "resetstickers", "start", "help", "ping", "stats", "welcome",
-        "staff", "bots", "pin", "pinned", "unpin", "ban", "unban", "kick",
-        "mute", "unmute", "settitle", "setdescription", "setdesc", "setphoto",
-        "removephoto", "zombies", "imposter",
-    ])
+    & not_command
     & (filters.group | filters.private)
 )
 async def chatbot_text_handler(_, msg: Message):
