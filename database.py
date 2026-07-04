@@ -359,3 +359,9 @@ async def get_user_count() -> int:
         async with db.execute("SELECT COUNT(*) FROM users") as cur:
             row = await cur.fetchone()
             return row[0] if row else 0
+
+
+async def user_exists(user_id: int) -> bool:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,)) as cur:
+            return (await cur.fetchone()) is not None
