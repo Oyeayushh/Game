@@ -14,9 +14,9 @@ API_HASH  = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 # ── Bot branding ────────────────────────────────────────────────────────────
-BOT_NAME      = "sʜʀɪsᴛɪ ɢᴀᴍᴇ ᴘʟᴀʏᴇʀ"
-BOT_USERNAME  = "@SHRISTI_GAME_PLAYER_bot"
-POWERED_BY    = "⚡ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴍᴀᴅᴀʀᴀ"
+BOT_NAME      = "Niku ɢᴀᴍᴇ ᴘʟᴀʏᴇʀ"
+BOT_USERNAME  = "@RoyalNikubot"
+POWERED_BY    = "⚡ ᴘᴏᴡᴇʀᴇᴅ ʙʏ Royal Don"
 VERSION       = "v2.0"
 
 # ── Logging / Owner ─────────────────────────────────────────────────────────
