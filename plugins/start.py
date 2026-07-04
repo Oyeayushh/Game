@@ -8,7 +8,8 @@ import MadaraDefaultr as app
 from pyrogram import filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, CallbackQuery
-from database import get_or_create_user, get_top_users, get_user_rank
+from database import get_or_create_user, get_top_users, get_user_rank, user_exists
+from plugins.logger import log_new_user
 from utils.buttons import (
     start_keyboard, games_keyboard, help_menu_keyboard,
     help_back_keyboard, keyboard, primary_btn, success_btn,
@@ -23,11 +24,18 @@ from config import BOT_NAME, POWERED_BY, VERSION, START_IMAGE
 
 @app.on_message(filters.command("start") & filters.private)
 async def start_private(_, msg: Message):
+    is_new = not await user_exists(msg.from_user.id)
     user = await get_or_create_user(
         msg.from_user.id,
         msg.from_user.username or "",
         msg.from_user.first_name or ""
     )
+    if is_new:
+        await log_new_user(
+            msg.from_user.id,
+            msg.from_user.username or "",
+            msg.from_user.first_name or ""
+        )
     name = msg.from_user.first_name or "ᴘʟᴀʏᴇʀ"
     caption = (
         f"👑 <b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ {BOT_NAME}!</b>\n"
