@@ -74,6 +74,12 @@ CREATE TABLE IF NOT EXISTS chats (
     title    TEXT DEFAULT '',
     added_at REAL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS premium (
+    user_id    INTEGER PRIMARY KEY,
+    expires_at REAL DEFAULT 0,
+    added_by   INTEGER DEFAULT 0,
+    added_at   REAL DEFAULT 0
+);
 """
 
 
@@ -365,3 +371,49 @@ async def user_exists(user_id: int) -> bool:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         async with db.execute("SELECT 1 FROM users WHERE user_id=?", (user_id,)) as cur:
             return (await cur.fetchone()) is not None
+
+
+# ─── Premium ───────────────────────────────────────────────────────────────
+
+async def add_premium(user_id: int, days: int, added_by: int = 0):
+    """days <= 0 grants lifetime premium (expires_at = 0 means never expires)."""
+    expires_at = 0 if days <= 0 else time.time() + days * 86400
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            "INSERT INTO premium (user_id, expires_at, added_by, added_at) VALUES (?,?,?,?) "
+            "ON CONFLICT(user_id) DO UPDATE SET expires_at=excluded.expires_at, added_by=excluded.added_by, added_at=excluded.added_at",
+            (user_id, expires_at, added_by, time.time())
+        )
+        await db.commit()
+
+
+async def remove_premium(user_id: int):
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("DELETE FROM premium WHERE user_id=?", (user_id,))
+        await db.commit()
+
+
+async def get_premium(user_id: int):
+    """Returns the premium row dict, or None if not premium / expired."""
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM premium WHERE user_id=?", (user_id,)) as cur:
+            row = await cur.fetchone()
+    if not row:
+        return None
+    row = dict(row)
+    if row["expires_at"] and row["expires_at"] < time.time():
+        await remove_premium(user_id)  # auto-expire
+        return None
+    return row
+
+
+async def is_premium(user_id: int) -> bool:
+    return (await get_premium(user_id)) is not None
+
+
+async def get_all_premium() -> list:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM premium") as cur:
+            return [dict(row) for row in await cur.fetchall()]
