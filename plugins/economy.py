@@ -12,7 +12,7 @@ from database import (
     get_or_create_user, get_balance, update_coins,
     get_relationship, get_daily, set_daily,
     get_group_claim, set_group_claim,
-    get_inventory, add_item, has_item, get_user_rank
+    get_inventory, add_item, has_item, get_user_rank, is_premium
 )
 from utils.buttons import keyboard, primary_btn, success_btn, danger_btn, btn, shop_keyboard
 from config import (
@@ -127,22 +127,26 @@ async def claim_cmd(_, msg: Message):
     now    = time.time()
     elapsed = now - last
 
-    if elapsed < CLAIM_COOLDOWN:
-        left_h = int((CLAIM_COOLDOWN - elapsed) // 3600)
-        left_m = int(((CLAIM_COOLDOWN - elapsed) % 3600) // 60)
+    premium = await is_premium(uid)
+    cooldown = CLAIM_COOLDOWN // 2 if premium else CLAIM_COOLDOWN
+
+    if elapsed < cooldown:
+        left_h = int((cooldown - elapsed) // 3600)
+        left_m = int(((cooldown - elapsed) % 3600) // 60)
         await msg.reply(
             f"⏳ ᴀʟʀᴇᴀᴅʏ ᴄʟᴀɪᴍᴇᴅ! ᴄᴏᴍᴇ ʙᴀᴄᴋ ɪɴ <b>{left_h}h {left_m}m</b>.\n\n"
             f"<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML
         )
         return
 
-    await update_coins(uid, CLAIM_AMOUNT)
+    reward = CLAIM_AMOUNT * 2 if premium else CLAIM_AMOUNT
+    await update_coins(uid, reward)
     await set_group_claim(uid, chat_id)
 
     await msg.reply(
         f"🎁 <b>ɢʀᴏᴜᴘ ʙᴏɴᴜs ᴄʟᴀɪᴍᴇᴅ!</b>\n\n"
-        f"💰 <code>+{CLAIM_AMOUNT:,}</code> ᴄᴏɪɴs ᴀᴅᴅᴇᴅ!\n"
-        f"⏰ ɴᴇxᴛ ᴄʟᴀɪᴍ ɪɴ 24 ʜᴏᴜʀs.\n\n"
+        f"💰 <code>+{reward:,}</code> ᴄᴏɪɴs ᴀᴅᴅᴇᴅ!{' 💎' if premium else ''}\n"
+        f"⏰ ɴᴇxᴛ ᴄʟᴀɪᴍ ɪɴ {cooldown // 3600} ʜᴏᴜʀs.\n\n"
         f"<i>{POWERED_BY}</i>", parse_mode=ParseMode.HTML
     )
 
@@ -174,6 +178,10 @@ async def daily_cmd(_, msg: Message):
     if streak % 7 == 0:
         reward += 1000  # weekly bonus
 
+    premium = await is_premium(uid)
+    if premium:
+        reward *= 2
+
     await update_coins(uid, reward)
     await set_daily(uid, streak)
 
@@ -181,7 +189,7 @@ async def daily_cmd(_, msg: Message):
 
     await msg.reply(
         f"📅 <b>ᴅᴀɪʟʏ ʀᴇᴡᴀʀᴅ ᴄʟᴀɪᴍᴇᴅ!</b>\n\n"
-        f"💰 ʀᴇᴡᴀʀᴅ: <code>+{reward:,}</code> ᴄᴏɪɴs\n"
+        f"💰 ʀᴇᴡᴀʀᴅ: <code>+{reward:,}</code> ᴄᴏɪɴs{' 💎 (2x ᴘʀᴇᴍɪᴜᴍ)' if premium else ''}\n"
         f"🔥 sᴛʀᴇᴀᴋ: <code>{streak}</code> ᴅᴀʏs\n"
         f"{streak_bar}\n"
         + (f"🎉 ᴡᴇᴇᴋʟʏ ʙᴏɴᴜs +1,000!\n" if streak % 7 == 0 else "") +
